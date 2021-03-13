@@ -37,15 +37,18 @@ function mouseFire(){
 
 function mouseMove(event){
 	var m = document.getElementById('mouse_coords');
+        // get the position of mouse
         var px = stage.player.x - stage.canvas.width/2 + event.offsetX;
         var py = stage.player.y - stage.canvas.height/2 + event.offsetY;
         m.innerHTML = 'mouse coords: ' + px + ', ' + py;
 
+        // compute the x, y distance from player
         var dx = Math.abs(px - stage.player.x);
         var dy = Math.abs(py - stage.player.y);
         var theta = Math.atan(dy / dx);
         stage.player.facing = theta;
 
+        // 4 if/elseif clause for quadrant 1-4
         if(px > stage.player.x && py < stage.player.y){
                 stage.player.quadrant.x = 1;
                 stage.player.quadrant.y = -1;

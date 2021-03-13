@@ -68,12 +68,14 @@ class Stage {
 	}
 
 	draw(){
+		// show player coordinates
 		var s = document.getElementById('player_coords');
 		s.innerHTML = 'player coords: ' + this.player.x + ", " + this.player.y;
 
 		var context = this.canvas.getContext('2d');
 		context.clearRect(0, 0, this.width, this.height);
 
+		// translate canvas so that player is always centered
 		context.save();
 		context.translate(this.canvas.width/2 - this.player.x, 
 			this.canvas.height/2 - this.player.y);
@@ -168,6 +170,7 @@ class Ball {
 		context.fill();   
 	}
 
+	// return the x, y coordinates of the four edges of this actor
 	getEdges(){
 		var leftEdge = Math.round(this.x - this.radius);
 		var rightEdge = Math.round(this.x + this.radius);
@@ -176,6 +179,7 @@ class Ball {
 		return new Pair(new Pair(leftEdge, rightEdge), new Pair(topEdge, botEdge));
 	}
 
+	// return true iff this actor and other overlaps/collide
 	collide(other){
 		var edges = this.getEdges();
 		var otherEdges = other.getEdges();
@@ -201,17 +205,17 @@ class Player extends Ball {
 		info.innerHTML = 'Health: ' + this.health +  
 			'&nbsp;&nbsp;&nbsp;&nbsp;Amunition: ' + this.amunition;
 
+		// draw the player
 		context.fillStyle = this.colour;
-   		context.fillRect(this.x, this.y, this.radius,this.radius);
+   		context.fillRect(this.x - this.radius/2, this.y - this.radius/2, this.radius,this.radius);
 
-		var offset = this.getOffset(50);
-		this.ax = this.x + offset.x;
-		this.ay = this.y + offset.y;
-		
+		// draw the gun with a distance of 30 from player
+		var hand = this.getOffset(30, this.facing);
 		context.fillStyle = 'rgba(220,100,0,1)';
-		context.fillRect(this.ax, this.ay, this.radius / 3,this.radius / 3);
+		context.fillRect(hand.x + this.x, hand.y + this.y, this.radius / 3,this.radius / 3);
 	}
 
+	// return the x, y coordinates of the four edges of this actor
 	getEdges(){
 		var leftEdge = this.x;
 		var rightEdge = this.x + this.radius;
@@ -220,19 +224,27 @@ class Player extends Ball {
 		return new Pair(new Pair(leftEdge, rightEdge), new Pair(topEdge, botEdge));
 	}
 
-	getOffset(hypotenuse){
-		var x = this.quadrant.x * Math.round(hypotenuse * Math.cos(this.facing));
-		var y = this.quadrant.y * Math.round(hypotenuse * Math.sin(this.facing));
+	/* return the x, y component of the distance from this actor
+	  at an specified angle in radians */
+	getOffset(hypotenuse, theta){
+		var x = this.quadrant.x * Math.round(hypotenuse * Math.cos(theta));
+		var y = this.quadrant.y * Math.round(hypotenuse * Math.sin(theta));
 		return new Pair(x, y);
 	}
 
+	// fire a shotgun of three small bullets
 	fire(){
 		if(this.amunition > 0){
-			var posision = new Pair(this.ax, this.ay);
-			var offset = this.getOffset(30);
-			var velocity = new Pair(offset.x, offset.y);
-			var color = 'rgba(255, 0, 0, 1)';
-			stage.addActor(new Bullet(stage, posision, velocity, color, 5));
+			for(var i=-1; i<2;i++){
+				// each bullet has 30 degrees of spacing
+				var spacing = 30 * Math.PI / 180;
+				var hand = this.getOffset(30, this.facing + i * spacing);
+				var posision = new Pair(hand.x + this.x, hand.y + this.y);
+				var velocity = this.getOffset(30, this.facing);
+				var color = 'rgba(255, 0, 0, 1)';
+				stage.addActor(new Bullet(stage, posision, velocity, color, 4));
+			}
+
 			this.amunition--;
 		}
 	}
@@ -244,10 +256,10 @@ class Bullet extends Ball{
 		this.position.y=this.position.y+this.velocity.y;
 		this.intPosition();
 
+		// check if this bullet hits anything
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
 			if(this != actor && this.collide(actor)){
-				// document.getElementById('temp').innerHTML = this.position + ', ' + this.getEdges() + ', other:' + actor.getEdges();
 				stage.removeActor(actor);
 				stage.removeActor(this);
 				return;
@@ -257,8 +269,7 @@ class Bullet extends Ball{
 		// vanish on wall hit
 		if(this.position.x<0 || this.position.x>this.stage.width || 
 			this.position.y<0 || this.position.y>this.stage.height){
-
-				stage.removeActor(this);
+			stage.removeActor(this);
 		}
 	}
 }
