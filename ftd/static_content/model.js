@@ -25,9 +25,9 @@ class Stage {
 			var x=Math.floor((Math.random()*this.width)); 
 			var y=Math.floor((Math.random()*this.height)); 
 			if(this.getActor(x,y)===null){
-				var velocity = new Pair(rand(20), rand(20));
+				var velocity = new Pair(rand(15), rand(15));
 				var red=randint(255), green=randint(255), blue=randint(255);
-				var radius = randint(20);
+				var radius = randint(10) + 10;
 				var alpha = Math.random();
 				var colour= 'rgba('+red+','+green+','+blue+','+alpha+')';
 				var position = new Pair(x,y);
@@ -167,6 +167,23 @@ class Ball {
 		context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false); 
 		context.fill();   
 	}
+
+	getEdges(){
+		var leftEdge = Math.round(this.x - this.radius);
+		var rightEdge = Math.round(this.x + this.radius);
+		var topEdge = Math.round(this.y - this.radius);
+		var botEdge = Math.round(this.y + this.radius);
+		return new Pair(new Pair(leftEdge, rightEdge), new Pair(topEdge, botEdge));
+	}
+
+	collide(other){
+		var edges = this.getEdges();
+		var otherEdges = other.getEdges();
+		if(edges.x.x > otherEdges.x.y || edges.x.y < otherEdges.x.x ||
+			edges.y.x > otherEdges.y.y || edges.y.y < otherEdges.y.x)
+			return false;
+		return true;
+	}
 }
 
 class Player extends Ball {
@@ -174,22 +191,74 @@ class Player extends Ball {
 		super(stage, position, velocity, colour, radius);
 		this.quadrant = new Pair(-1, -1);
 		this.facing = Math.PI / 2;
+
+		this.amunition = 24;
+		this.health = 100;
 	}
 
 	draw(context){
+		var info = document.getElementById('player_info')
+		info.innerHTML = 'Health: ' + this.health +  
+			'&nbsp;&nbsp;&nbsp;&nbsp;Amunition: ' + this.amunition;
+
 		context.fillStyle = this.colour;
    		context.fillRect(this.x, this.y, this.radius,this.radius);
 
-		var ax = this.x + this.quadrant.x * Math.round(50 * Math.cos(this.facing));
-		var ay = this.y + this.quadrant.y * Math.round(50 * Math.sin(this.facing));
+		var offset = this.getOffset(50);
+		this.ax = this.x + offset.x;
+		this.ay = this.y + offset.y;
 		
-		context.fillStyle = 'rgba(255,0,0,1)';
-		context.fillRect(ax, ay, this.radius / 3,this.radius / 3);
+		context.fillStyle = 'rgba(220,100,0,1)';
+		context.fillRect(this.ax, this.ay, this.radius / 3,this.radius / 3);
+	}
 
-		/**
-		context.beginPath(); 
-		context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false); 
-		context.stroke();   
-		**/
+	getEdges(){
+		var leftEdge = this.x;
+		var rightEdge = this.x + this.radius;
+		var topEdge = this.y;
+		var botEdge = this.y + this.radius;
+		return new Pair(new Pair(leftEdge, rightEdge), new Pair(topEdge, botEdge));
+	}
+
+	getOffset(hypotenuse){
+		var x = this.quadrant.x * Math.round(hypotenuse * Math.cos(this.facing));
+		var y = this.quadrant.y * Math.round(hypotenuse * Math.sin(this.facing));
+		return new Pair(x, y);
+	}
+
+	fire(){
+		if(this.amunition > 0){
+			var posision = new Pair(this.ax, this.ay);
+			var offset = this.getOffset(30);
+			var velocity = new Pair(offset.x, offset.y);
+			var color = 'rgba(255, 0, 0, 1)';
+			stage.addActor(new Bullet(stage, posision, velocity, color, 5));
+			this.amunition--;
+		}
+	}
+}
+
+class Bullet extends Ball{
+	step(){
+		this.position.x=this.position.x+this.velocity.x;
+		this.position.y=this.position.y+this.velocity.y;
+		this.intPosition();
+
+		for(var i=0;i<this.stage.actors.length;i++){
+			var actor = this.stage.actors[i];
+			if(this != actor && this.collide(actor)){
+				// document.getElementById('temp').innerHTML = this.position + ', ' + this.getEdges() + ', other:' + actor.getEdges();
+				stage.removeActor(actor);
+				stage.removeActor(this);
+				return;
+			}
+		}
+			
+		// vanish on wall hit
+		if(this.position.x<0 || this.position.x>this.stage.width || 
+			this.position.y<0 || this.position.y>this.stage.height){
+
+				stage.removeActor(this);
+		}
 	}
 }

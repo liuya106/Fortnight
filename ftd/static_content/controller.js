@@ -8,6 +8,7 @@ function setupGame(){
 	// https://javascript.info/keyboard-events
 	document.addEventListener('keydown', moveByKey);
         stage.canvas.addEventListener('mousemove', mouseMove);
+        stage.canvas.addEventListener('mousedown', mouseFire);
 }
 function startGame(){
 	interval=setInterval(function(){ stage.step(); stage.draw(); },100);
@@ -19,25 +20,25 @@ function pauseGame(){
 function moveByKey(event){
 	var key = event.key;
 	var moveMap = { 
-		'a': new Pair(-25,0),
-		's': new Pair(0,25),
-		'd': new Pair(25,0),
-		'w': new Pair(0,-25)
+		'a': new Pair(-15,0),
+		's': new Pair(0,15),
+		'd': new Pair(15,0),
+		'w': new Pair(0,-15),
+                'h': new Pair(0, 0)
 	};
 	if(key in moveMap){
 		stage.player.velocity=moveMap[key];
 	}
 }
 
-function mouseMove(event){
-	var x = event.offsetX;
-        var y = event.offsetY;
-        // stage.player.velocity=moveMap[key];
-	var m = document.getElementById('mouse_coords');
-        // m.innerHTML = 'mouse coords: ' + x + ', ' + y;
+function mouseFire(){
+        stage.player.fire();
+}
 
-        var px = stage.player.x - stage.canvas.width/2 + x;
-        var py = stage.player.y - stage.canvas.height/2 + y;
+function mouseMove(event){
+	var m = document.getElementById('mouse_coords');
+        var px = stage.player.x - stage.canvas.width/2 + event.offsetX;
+        var py = stage.player.y - stage.canvas.height/2 + event.offsetY;
         m.innerHTML = 'mouse coords: ' + px + ', ' + py;
 
         var dx = Math.abs(px - stage.player.x);
@@ -68,7 +69,6 @@ function mouseMove(event){
         var deg = theta * (180 / Math.PI);
         m.innerHTML += '; dx: '+ dx + ', dy: ' + dy + ', theta: ' + 
                 Math.round(theta * 100) / 100 + ', degree: ' + Math.round(deg);
-
 }
 
 function login(){
