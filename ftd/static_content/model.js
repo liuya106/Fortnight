@@ -69,7 +69,7 @@ class Stage {
 
 	draw(){
 		var s = document.getElementById('player_coords');
-		s.innerHTML = this.player.x + ", " + this.player.y;
+		s.innerHTML = 'player coords: ' + this.player.x + ", " + this.player.y;
 
 		var context = this.canvas.getContext('2d');
 		context.clearRect(0, 0, this.width, this.height);
@@ -170,9 +170,22 @@ class Ball {
 }
 
 class Player extends Ball {
+	constructor(stage, position, velocity, colour, radius){
+		super(stage, position, velocity, colour, radius);
+		this.quadrant = new Pair(-1, -1);
+		this.facing = Math.PI / 2;
+	}
+
 	draw(context){
 		context.fillStyle = this.colour;
    		context.fillRect(this.x, this.y, this.radius,this.radius);
+
+		var ax = this.x + this.quadrant.x * Math.round(50 * Math.cos(this.facing));
+		var ay = this.y + this.quadrant.y * Math.round(50 * Math.sin(this.facing));
+		
+		context.fillStyle = 'rgba(255,0,0,1)';
+		context.fillRect(ax, ay, this.radius / 3,this.radius / 3);
+
 		/**
 		context.beginPath(); 
 		context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI, false); 

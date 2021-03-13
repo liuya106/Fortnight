@@ -7,6 +7,7 @@ function setupGame(){
 
 	// https://javascript.info/keyboard-events
 	document.addEventListener('keydown', moveByKey);
+        stage.canvas.addEventListener('mousemove', mouseMove);
 }
 function startGame(){
 	interval=setInterval(function(){ stage.step(); stage.draw(); },100);
@@ -26,6 +27,48 @@ function moveByKey(event){
 	if(key in moveMap){
 		stage.player.velocity=moveMap[key];
 	}
+}
+
+function mouseMove(event){
+	var x = event.offsetX;
+        var y = event.offsetY;
+        // stage.player.velocity=moveMap[key];
+	var m = document.getElementById('mouse_coords');
+        // m.innerHTML = 'mouse coords: ' + x + ', ' + y;
+
+        var px = stage.player.x - stage.canvas.width/2 + x;
+        var py = stage.player.y - stage.canvas.height/2 + y;
+        m.innerHTML = 'mouse coords: ' + px + ', ' + py;
+
+        var dx = Math.abs(px - stage.player.x);
+        var dy = Math.abs(py - stage.player.y);
+        var theta = Math.atan(dy / dx);
+        stage.player.facing = theta;
+
+        if(px > stage.player.x && py < stage.player.y){
+                stage.player.quadrant.x = 1;
+                stage.player.quadrant.y = -1;
+        }
+        else if(px < stage.player.x && py <= stage.player.y){
+                theta = Math.PI - theta;
+                stage.player.quadrant.x = -1;
+                stage.player.quadrant.y = -1;
+        }
+        else if(px < stage.player.x && py > stage.player.y){
+                theta += Math.PI;
+                stage.player.quadrant.x = -1;
+                stage.player.quadrant.y = 1;
+        }
+        else if(px >= stage.player.x && py > stage.player.y){
+                theta = Math.PI * 2 - theta;
+                stage.player.quadrant.x = 1;
+                stage.player.quadrant.y = 1;
+        }
+        
+        var deg = theta * (180 / Math.PI);
+        m.innerHTML += '; dx: '+ dx + ', dy: ' + dy + ', theta: ' + 
+                Math.round(theta * 100) / 100 + ', degree: ' + Math.round(deg);
+
 }
 
 function login(){
