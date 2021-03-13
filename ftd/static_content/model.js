@@ -9,8 +9,8 @@ class Stage {
 		this.player=null; // a special actor, the player
 	
 		// the logical width and height of the stage
-		this.width=canvas.width;
-		this.height=canvas.height;
+		this.width=canvas.width * 3;
+		this.height=canvas.height * 3;
 
 		// Add the player to the center of the stage
 		var velocity = new Pair(0,0);
@@ -68,11 +68,21 @@ class Stage {
 	}
 
 	draw(){
+		var s = document.getElementById('player_coords');
+		s.innerHTML = this.player.x + ", " + this.player.y;
+
 		var context = this.canvas.getContext('2d');
 		context.clearRect(0, 0, this.width, this.height);
+
+		context.save();
+		context.translate(this.canvas.width/2 - this.player.x, 
+			this.canvas.height/2 - this.player.y);
+			
 		for(var i=0;i<this.actors.length;i++){
 			this.actors[i].draw(context);
 		}
+
+		context.restore();
 	}
 
 	// return the first actor at coordinates (x,y) return null if there is no such actor

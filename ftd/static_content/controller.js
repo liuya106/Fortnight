@@ -18,10 +18,10 @@ function pauseGame(){
 function moveByKey(event){
 	var key = event.key;
 	var moveMap = { 
-		'a': new Pair(-5,0),
-		's': new Pair(0,5),
-		'd': new Pair(5,0),
-		'w': new Pair(0,-5)
+		'a': new Pair(-25,0),
+		's': new Pair(0,25),
+		'd': new Pair(25,0),
+		'w': new Pair(0,-25)
 	};
 	if(key in moveMap){
 		stage.player.velocity=moveMap[key];
@@ -29,31 +29,37 @@ function moveByKey(event){
 }
 
 function login(){
-	credentials =  { 
-		"username": $("#username").val(), 
-		"password": $("#password").val() 
-	};
+        $("#ui_login").hide();
+        $("#ui_play").show();
 
-        $.ajax({
-                method: "POST",
-                url: "/api/auth/login",
-                data: JSON.stringify({}),
-		headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                processData:false,
-                contentType: "application/json; charset=utf-8",
-                dataType:"json"
-        }).done(function(data, text_status, jqXHR){
-                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+        setupGame();
+        startGame();
 
-        	$("#ui_login").hide();
-        	$("#ui_play").show();
+	// credentials =  { 
+	// 	"username": $("#username").val(), 
+	// 	"password": $("#password").val() 
+	// };
 
-		setupGame();
-		startGame();
+        // $.ajax({
+        //         method: "POST",
+        //         url: "/api/auth/login",
+        //         data: JSON.stringify({}),
+	// 	headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+        //         processData:false,
+        //         contentType: "application/json; charset=utf-8",
+        //         dataType:"json"
+        // }).done(function(data, text_status, jqXHR){
+        //         console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
 
-        }).fail(function(err){
-                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        });
+        // 	$("#ui_login").hide();
+        // 	$("#ui_play").show();
+
+	// 	setupGame();
+	// 	startGame();
+
+        // }).fail(function(err){
+        //         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+        // });
 }
 
 // Using the /api/auth/test route, must send authorization header
