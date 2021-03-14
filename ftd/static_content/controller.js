@@ -11,7 +11,7 @@ function setupGame(){
         stage.canvas.addEventListener('mousedown', mouseFire);
 }
 function startGame(){
-	interval=setInterval(function(){ stage.step(); stage.draw(); },100);
+	interval=setInterval(function(){ stage.step(); stage.draw(); },50);
 }
 function pauseGame(){
 	clearInterval(interval);
@@ -20,15 +20,17 @@ function pauseGame(){
 function moveByKey(event){
 	var key = event.key;
 	var moveMap = { 
-		'a': new Pair(-15,0),
-		's': new Pair(0,15),
-		'd': new Pair(15,0),
-		'w': new Pair(0,-15),
+		'a': new Pair(-8,0),
+		's': new Pair(0,8),
+		'd': new Pair(8,0),
+		'w': new Pair(0,-8),
                 'h': new Pair(0, 0)
 	};
 	if(key in moveMap){
 		stage.player.velocity=moveMap[key];
-	}
+	} else if(key == 'e'){
+                stage.player.refill();
+        }
 }
 
 function mouseFire(){
