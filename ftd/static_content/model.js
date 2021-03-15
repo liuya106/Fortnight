@@ -180,7 +180,7 @@ class Ball {
 
 		this.intPosition();
 			
-		// bounce off the walls
+		// stay in boundary
 		if(this.position.x<0){
 			this.position.x=0;
 		}
@@ -414,6 +414,7 @@ class Bullet extends Ball{
 		// 	stage.removeActor(this);
 		// }
 
+		//bounce off the walls
 		if(this.position.x<0){
 			this.position.x=0;
 			this.velocity.x=Math.abs(this.velocity.x);

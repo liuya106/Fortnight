@@ -4,11 +4,13 @@ var interval=null;
 var credentials={ "username": "", "password":"" };
 function setupGame(){
 	stage=new Stage(document.getElementById('stage'));
-
 	// https://javascript.info/keyboard-events
 	document.addEventListener('keydown', moveByKey);
         stage.canvas.addEventListener('mousemove', mouseMove);
         stage.canvas.addEventListener('mousedown', mouseFire);
+        // var ctx = stage.canvas.getContext("2d");
+        // ctx.font = "30px Arial";
+        // ctx.fillText("Hello World", 10, 50);
 }
 function startGame(){
 	interval=setInterval(function(){ stage.step(); stage.draw(); },50);
@@ -78,29 +80,52 @@ function mouseMove(event){
                 Math.round(theta * 100) / 100 + ', degree: ' + Math.round(deg);
 }
 
-function login(){
+function registration(){
+        $("#login").on('click', function(){login();});
         $("#ui_login").hide();
-        $("#ui_play").show();
-        $("#navigation").show();
+        $("#ui_play").hide();
         $("#lose_msg").hide();
+        $("#navigation").hide();
+        $("#instr").hide();
+        $("#registration").show();
+}
+
+function instruction(){
+        $("#ui_login").hide();
+        $("#ui_play").hide();
+        $("#lose_msg").hide();
+        $("#registration").hide();
+        $("#navigation").show();
+        $("#instr").show();  
+}
+
+function play(){
+        $("#ui_login").hide();
+        $("#lose_msg").hide();
+        $("#navigation").show();
+        $("#ui_play").show();
+        $("#instr").hide();
+}
+
+function login(){
+        $("#ui_login").show();
+        $("#ui_play").hide();
+        $("#lose_msg").hide();
+        $("#navigation").hide();
+        $("#instr").hide();
+        $("#registration").hide();
+        $("#loginSubmit").on('click',function(){ loggedin(); });
+        $("#register").on('click', function(){ registration(); });
+}
+
+function loggedin(){
+        play();
         setupGame();
         startGame();
 
-        $("#instruction").on('click', function(){
-                $("#ui_login").hide();
-                $("#ui_play").hide();
-                $("#lose_msg").hide();
-                $("#navigation").show();
-                $("#instr").show();
-        })
+        $("#instruction").on('click', function(){instruction();})
 
-        $("#play").on('click', function(){
-                $("#ui_login").hide();
-                $("#lose_msg").hide();
-                $("#navigation").show();
-                $("#ui_play").show();
-                $("#instr").hide();
-        })
+        $("#play").on('click', function(){play();})
 
         // $("#instruction").on('mouseover', function(){
         //         $("#instruction").css("color:#1e81b0")
@@ -150,11 +175,6 @@ function test(){
 
 $(function(){
         // Setup all events here and display the appropriate UI
-        $("#loginSubmit").on('click',function(){ login(); });
-        $("#ui_login").show();
-        $("#ui_play").hide();
-        $("#lose_msg").hide();
-        $("#navigation").hide();
-        $("#instr").hide();
+        login();
 });
 
