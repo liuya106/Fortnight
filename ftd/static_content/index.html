@@ -9,12 +9,41 @@
 		<style>
 			#ui_login { display:block; }
 			#ui_play { display:none; }
+			#navigation {display:flex;justify-content:space-between;}
+			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;width:50%;height:min-content;padding:0px;}
+			#navigation button{border:none;}
+			#navigation button:hover{background-color:black;color:white;}
 		</style>
 		<title>f0rt9it32d</title>
 	</head>
 	<body bgcolor="ffffff">
-		<h1>f0rt9it32d</h1>
+		<nav id="navigation">
+			<h1>f0rt9it32d </h1>
+			<ul>
+				<li id="play"><button>Play</button></li>
+				<li id="instruction"><button>Instruction</button></li>
+				<li id="stats"><button>Stats</button></li>
+				<li id="profile"><button>Profile</button></li>
+				<li id='logout'><button>Logout</button></li>
+			</ul>
+		</nav>
+
+
+		<div id="instr">
+			<h1> Instruction </h1>
+			<p>Welcome to f0rt9it32d! </p>
+			<p>W: move forwards</p>
+			<p>A: move leftwards</p>
+			<p>S: move backwards</p>
+			<p>D: move rightwards</p>
+			<p>H: hold position</p>
+			<p>LMB: Shoot</p>
+			<p>E: come close to the ammunition box and press E to resupply</p>
+		</div>
+		
+
 		<div id="ui_login">
+			<h1>f0rt9it32d </h1>
 			<div>
 				<input type="text" id="username" placeholder="User Name" />
 				<input type="password" id="password" placeholder="Password" />
@@ -39,7 +68,7 @@
 			</center>
 		</div>
 		<div id="lose_msg">
-		<h1>You lose!</h1>
+			<h1>You lose!</h1>
 		</div>
 	</body>
 </html>

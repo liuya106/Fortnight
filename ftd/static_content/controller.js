@@ -81,9 +81,30 @@ function mouseMove(event){
 function login(){
         $("#ui_login").hide();
         $("#ui_play").show();
+        $("#navigation").show();
         $("#lose_msg").hide();
         setupGame();
         startGame();
+
+        $("#instruction").on('click', function(){
+                $("#ui_login").hide();
+                $("#ui_play").hide();
+                $("#lose_msg").hide();
+                $("#navigation").show();
+                $("#instr").show();
+        })
+
+        $("#play").on('click', function(){
+                $("#ui_login").hide();
+                $("#lose_msg").hide();
+                $("#navigation").show();
+                $("#ui_play").show();
+                $("#instr").hide();
+        })
+
+        // $("#instruction").on('mouseover', function(){
+        //         $("#instruction").css("color:#1e81b0")
+        // })
 
 	// credentials =  { 
 	// 	"username": $("#username").val(), 
@@ -133,5 +154,7 @@ $(function(){
         $("#ui_login").show();
         $("#ui_play").hide();
         $("#lose_msg").hide();
+        $("#navigation").hide();
+        $("#instr").hide();
 });
 
