@@ -177,26 +177,22 @@ class Ball {
 
 		this.position.x=this.position.x+this.velocity.x;
 		this.position.y=this.position.y+this.velocity.y;
+
+		this.intPosition();
 			
 		// bounce off the walls
 		if(this.position.x<0){
 			this.position.x=0;
-			this.velocity.x=Math.abs(this.velocity.x);
 		}
 		if(this.position.x>this.stage.width){
 			this.position.x=this.stage.width;
-			this.velocity.x=-Math.abs(this.velocity.x);
 		}
 		if(this.position.y<0){
 			this.position.y=0;
-			this.velocity.y=Math.abs(this.velocity.y);
 		}
 		if(this.position.y>this.stage.height){
 			this.position.y=this.stage.height;
-			this.velocity.y=-Math.abs(this.velocity.y);
 		}
-		this.intPosition();
-
 	}
 	intPosition(){
 		this.x = Math.round(this.position.x);
@@ -353,6 +349,7 @@ class Player extends Ball {
 			$("#lose_msg").show();
 		}
 	}
+
 }
 
 class Enemy extends Ball{
@@ -412,10 +409,28 @@ class Bullet extends Ball{
 			}
 		}
 		// vanish on wall hit
-		if(this.position.x<0 || this.position.x>this.stage.width || 
-			this.position.y<0 || this.position.y>this.stage.height){
-			stage.removeActor(this);
+		// if(this.position.x<0 || this.position.x>this.stage.width || 
+		// 	this.position.y<0 || this.position.y>this.stage.height){
+		// 	stage.removeActor(this);
+		// }
+
+		if(this.position.x<0){
+			this.position.x=0;
+			this.velocity.x=Math.abs(this.velocity.x);
 		}
+		if(this.position.x>this.stage.width){
+			this.position.x=this.stage.width;
+			this.velocity.x=-Math.abs(this.velocity.x);
+		}
+		if(this.position.y<0){
+			this.position.y=0;
+			this.velocity.y=Math.abs(this.velocity.y);
+		}
+		if(this.position.y>this.stage.height){
+			this.position.y=this.stage.height;
+			this.velocity.y=-Math.abs(this.velocity.y);
+		}
+		
 	}
 }
 
