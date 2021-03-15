@@ -80,15 +80,7 @@ function mouseMove(event){
                 Math.round(theta * 100) / 100 + ', degree: ' + Math.round(deg);
 }
 
-function registration(){
-        $("#login").on('click', function(){login();});
-        $("#ui_login").hide();
-        $("#ui_play").hide();
-        $("#lose_msg").hide();
-        $("#navigation").hide();
-        $("#instr").hide();
-        $("#registration").show();
-}
+
 
 function instruction(){
         $("#ui_login").hide();
@@ -99,13 +91,7 @@ function instruction(){
         $("#instr").show();  
 }
 
-function play(){
-        $("#ui_login").hide();
-        $("#lose_msg").hide();
-        $("#navigation").show();
-        $("#ui_play").show();
-        $("#instr").hide();
-}
+
 
 function login(){
         $("#ui_login").show();
@@ -118,13 +104,32 @@ function login(){
         $("#register").on('click', function(){ registration(); });
 }
 
+function registration(){
+        $("#login").on('click', function(){login();});
+        $("#ui_login").hide();
+        $("#ui_play").hide();
+        $("#lose_msg").hide();
+        $("#navigation").hide();
+        $("#instr").hide();
+        $("#registration").show();
+}
+
+function play(){
+        $("#ui_login").hide();
+        $("#lose_msg").hide();
+        $("#navigation").show();
+        $("#ui_play").show();
+        $("#instr").hide();
+        $("#logout").on('click', function(){ login() });
+}
+
 function loggedin(){
+        clearInterval(interval);
         play();
         setupGame();
         startGame();
 
         $("#instruction").on('click', function(){instruction();})
-
         $("#play").on('click', function(){play();})
 
         // $("#instruction").on('mouseover', function(){
