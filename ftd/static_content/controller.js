@@ -44,31 +44,33 @@ function mouseMove(event){
         var py = stage.player.y - stage.canvas.height/2 + event.offsetY;
         m.innerHTML = 'mouse coords: ' + px + ', ' + py;
 
-        // compute the x, y distance from player
+        // // compute the x, y distance from player
         var dx = Math.abs(px - stage.player.x);
         var dy = Math.abs(py - stage.player.y);
         var theta = Math.atan(dy / dx);
-        stage.player.facing = theta;
+        // stage.player.facing = theta;
 
         // 4 if/elseif clause for quadrant 1-4
+        stage.player.face(px, py);
+
         if(px > stage.player.x && py < stage.player.y){
-                stage.player.quadrant.x = 1;
-                stage.player.quadrant.y = -1;
+                // stage.player.quadrant.x = 1;
+                // stage.player.quadrant.y = -1;
         }
         else if(px < stage.player.x && py <= stage.player.y){
                 theta = Math.PI - theta;
-                stage.player.quadrant.x = -1;
-                stage.player.quadrant.y = -1;
+                // stage.player.quadrant.x = -1;
+                // stage.player.quadrant.y = -1;
         }
         else if(px < stage.player.x && py > stage.player.y){
                 theta += Math.PI;
-                stage.player.quadrant.x = -1;
-                stage.player.quadrant.y = 1;
+                // stage.player.quadrant.x = -1;
+                // stage.player.quadrant.y = 1;
         }
         else if(px >= stage.player.x && py > stage.player.y){
                 theta = Math.PI * 2 - theta;
-                stage.player.quadrant.x = 1;
-                stage.player.quadrant.y = 1;
+                // stage.player.quadrant.x = 1;
+                // stage.player.quadrant.y = 1;
         }
         
         var deg = theta * (180 / Math.PI);
@@ -79,7 +81,7 @@ function mouseMove(event){
 function login(){
         $("#ui_login").hide();
         $("#ui_play").show();
-
+        $("#lose_msg").hide();
         setupGame();
         startGame();
 
@@ -130,5 +132,6 @@ $(function(){
         $("#loginSubmit").on('click',function(){ login(); });
         $("#ui_login").show();
         $("#ui_play").hide();
+        $("#lose_msg").hide();
 });
 
