@@ -8,15 +8,16 @@ class Stage {
 
 		// GAME PARAMETERS
 		var difficultyMap = { 
-			'easy': {'playerDamage': 200, 'opponentDamage': 10, 'numOpponents': 15, 'numObstacles': 40},
-			'medium': {'playerDamage': 100, 'opponentDamage': 20, 'numOpponents': 25, 'numObstacles': 25},
-			'hard': {'playerDamage': 50, 'opponentDamage': 30, 'numOpponents': 35, 'numObstacles': 20},
-			'nightmare': {'playerDamage': 50, 'opponentDamage': 100, 'numOpponents': 50, 'numObstacles': 20}
+			'easy': {'playerDamage': 200, 'opponentDamage': 10, 'numOpponents': 10, 'numObstacles': 40},
+			'medium': {'playerDamage': 100, 'opponentDamage': 20, 'numOpponents': 15, 'numObstacles': 25},
+			'hard': {'playerDamage': 50, 'opponentDamage': 30, 'numOpponents': 20, 'numObstacles': 20},
+			'nightmare': {'playerDamage': 50, 'opponentDamage': 100, 'numOpponents': 25, 'numObstacles': 20}
 		};
 		this.params = difficultyMap[difficulty];
 	
 		this.actors=[]; // all actors on this stage (monsters, player, boxes, ...)
 		this.player=null; // a special actor, the player
+		this.score=0;
 	
 		// the logical width and height of the stage
 		this.width=canvas.width * 3;
@@ -37,36 +38,36 @@ class Stage {
 			this.addActor(a);
 			total--;
 		}
-		// Add in some Balls
+		this.enemies = 0;
+		// Add in some Enemies
 		var total=this.params['numOpponents'];
 		while(total>0){
-			var values = this.ballValues(10, 10);
-			this.addEnemy(values['position'], values['velocity'], values['colour'], values['radius']);
+			this.addEnemy(10, 10);
 			total--;
 		}
-		
-		
 	}
 
-	ballValues(radiusLower, radiusRange){
+	ballValues(radiusMin, radiusRange){
 		var red=randint(255), green=randint(255), blue=randint(255);
 		return {
 		'velocity': new Pair(0, 0),
-		'radius': randint(radiusRange) + radiusLower,
+		'radius': randint(radiusRange) + radiusMin,
 		'colour': 'rgba('+red+','+green+','+blue+','+Math.random()+')',
 		'position': new Pair(Math.floor((Math.random()*this.width)),
 		Math.floor((Math.random()*this.height)))}
 	}
 
-	addEnemy(position, velocity, colour, radius){
+	addEnemy(radiusMin, radiusRange){
+		var values = this.ballValues(radiusMin, radiusRange);
 		var tries = 0;
 		while(tries < 10){
 			var position = new Pair(Math.floor((Math.random()*this.width)),
 									Math.floor((Math.random()*this.height)));
-			let b = new Enemy(this, position, velocity, colour, radius, 100);
+			let b = new Gunner(this, position, values['velocity'], values['colour'], values['radius'], 100, 200);
 			for(var i=0;i<this.actors.length;i++){
 				if(!b.collide(b.position.x, b.position.y,this.actors[i])){
 					this.addActor(b);
+					this.enemies++;
 					return;
 				}
 			}
@@ -99,6 +100,9 @@ class Stage {
 	// Take one step in the animation of the game.  Do this by asking each of the actors to take a single step. 
 	// NOTE: Careful if an actor died, this may break!
 	step(){
+		while(this.enemies < this.params['numOpponents']){
+			this.addEnemy(10, 10);
+		}
 		for(var i=0;i<this.actors.length;i++){
 			this.actors[i].step();
 		}
@@ -108,7 +112,6 @@ class Stage {
 		// show player coordinates
 		var s = document.getElementById('player_coords');
 		s.innerHTML = 'player coords: ' + this.player.x + ", " + this.player.y;
-
 		var context = this.canvas.getContext('2d');
 		context.clearRect(0, 0, this.width, this.height);
 	
@@ -327,26 +330,33 @@ class Ball {
 	// whenever hit by a bullet
 	onBulletHit(damage){
 		this.stage.removeActor(this);
+		return true;
 	}
 }
 
 class Player extends Ball {
 	constructor(stage, position, velocity, colour, radius, hp){
 		super(stage, position, velocity, colour, radius);
-		this.health = hp;
+		// this.health = hp;
+		this.health = hp * 100;
 		this.amunition = 24;
 	}
 
 	draw(context){
-		var info = document.getElementById('player_info')
-		info.innerHTML = 'Health: ' + this.health +  
-			'&nbsp;&nbsp;&nbsp;&nbsp;Amunition: ' + this.amunition;
+		this.showStats();
 
 		// draw the player
 		super.draw(context);
 
 		// draw the player's weapon
 		this.drawFacing(context, 'rgba(220,100,0,1)');
+	}
+
+	showStats(){
+		var info = document.getElementById('player_info')
+		info.innerHTML = 'Health: ' + this.health +  
+			'&nbsp;&nbsp;&nbsp;&nbsp;Amunition: ' + this.amunition + 
+			'&nbsp;&nbsp;&nbsp;&nbsp;Score: ' + this.stage.score;
 	}
 
 	// fire a shotgun of three small bullets
@@ -361,7 +371,7 @@ class Player extends Ball {
 			var posision = new Pair(hand.x + this.x, hand.y + this.y);
 			var velocity = this.getOffset(20, this.facing);
 			var color = 'rgba(255, 0, 0, 1)';
-			stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, stage.params['playerDamage']));
+			stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, stage.params['playerDamage'], 'player'));
 		}
 		this.amunition--;
 	}
@@ -391,15 +401,17 @@ class Player extends Ball {
 			$("#ui_play").hide();
 			$("#lose_msg").show();
 		}
+		return true;
 	}
 
 }
 
 class Enemy extends Ball{
-	constructor(stage, position, velocity, colour, radius, hp){
+	constructor(stage, position, velocity, colour, radius, hp, range){
 		super(stage, position, velocity, colour, radius);
 		this.health = hp;
 		// fire time interval
+		this.range = range;
 		this.cooldown = randint(100);
 	}
 	fire(){
@@ -407,7 +419,7 @@ class Enemy extends Ball{
 		var posision = new Pair(hand.x + this.x, hand.y + this.y);
 		var velocity = this.getOffset(15, this.facing);
 		var color = 'rgba(255, 0, 0, 1)';
-		stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, this.stage.params['opponentDamage']));
+		stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, this.stage.params['opponentDamage'], 'enemy'));
 	}
 
 	// face the player and take a step; fires if no cooldown
@@ -416,12 +428,25 @@ class Enemy extends Ball{
 		this.cooldown--;
 		if(this.cooldown==0){
 			this.fire();
-			this.cooldown=100;
+			this.resetCooldown();
 		}
+		if(this.dist(stage.player.x, stage.player.y) < this.range) return;
+
 		var velocity = this.getOffset(4, this.facing);
 		this.velocity.x=velocity.x;
 		this.velocity.y=velocity.y;
 		super.step();
+	}
+
+	resetCooldown(){
+		this.cooldown = 100;
+	}
+
+	// return the distance of specified coords from this
+	dist(px, py){
+		var dx = Math.abs(px - this.x);
+		var dy = Math.abs(py - this.y);
+		return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
 	}
 
 	// draw this enemy and its gun
@@ -435,17 +460,49 @@ class Enemy extends Ball{
 		this.health -= damage;
 		if(this.health <= 0){
 			this.stage.removeActor(this);
-
+			this.stage.enemies--;
+			return true;
 		}
+		return false;
 	}
 }
 
+class Gunner extends Enemy{
+	constructor(stage, position, velocity, colour, radius, hp, range){
+		super(stage, position, velocity, colour, radius, hp, range);
+		this.cooldown = randint(400);
+		this.bullets = 10;
+	}
+
+	fire(){
+		var hand = this.getOffset(25, this.facing);
+		var posision = new Pair(hand.x + this.x, hand.y + this.y);
+		var velocity = this.getOffset(15, this.facing);
+		var color = 'rgba(255, 0, 0, 1)';
+		stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, this.stage.params['opponentDamage'], 'enemy'));
+	}
+
+	resetCooldown(){
+		this.bullets--;
+		this.cooldown = 3;
+		if(this.bullets==0){
+			this.cooldown = 400;
+			this.bullets = 10;
+		}
+	}
+	// draw this enemy and its gun
+	draw(context){
+		super.draw(context);
+		this.drawFacing(context, 'rgba('+(255-this.cooldown)+',0,0,1)');
+	}
+}
 
 class Bullet extends Ball{
-	constructor(stage, position, velocity, colour, radius, hp, damage){
+	constructor(stage, position, velocity, colour, radius, hp, damage, from){
 		super(stage, position, velocity, colour, radius, hp);
 		this.health = hp;
 		this.damage = damage;
+		this.from = from;
 	}
 	step(){
 		this.position.x=this.position.x+this.velocity.x;
@@ -460,16 +517,11 @@ class Bullet extends Ball{
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
 			if(this != actor && this.collide(this.x,this.y,actor)){
-				actor.onBulletHit(this.damage);
+				if(actor.onBulletHit(this.damage) && this.from=='player') this.stage.score++;
 				stage.removeActor(this);
 				return;
 			}
 		}
-		// vanish on wall hit
-		// if(this.position.x<0 || this.position.x>this.stage.width || 
-		// 	this.position.y<0 || this.position.y>this.stage.height){
-		// 	stage.removeActor(this);
-		// }
 
 		//bounce off the walls
 		if(this.position.x<0){
@@ -498,7 +550,7 @@ class Amunition extends Ball{
 	}
 
 	onBulletHit(damage){
-		return;
+		return false;
 	}
 
 	getEdges(x, y){
