@@ -3,7 +3,7 @@ var view = null;
 var interval=null;
 var credentials={ "username": "", "password":"" };
 function setupGame(){
-	stage=new Stage(document.getElementById('stage'));
+	stage=new Stage(document.getElementById('stage'), 'hard');
 	// https://javascript.info/keyboard-events
 	document.addEventListener('keydown', moveByKey);
         stage.canvas.addEventListener('mousemove', mouseMove);
@@ -13,11 +13,21 @@ function setupGame(){
         // ctx.fillText("Hello World", 10, 50);
 }
 function startGame(){
-	interval=setInterval(function(){ stage.step(); stage.draw(); },50);
+	interval=setInterval(function(){ 
+                if(stage.gameLost) clearGame();
+                else{
+                        stage.step(); stage.draw(); }},50);
 }
 function pauseGame(){
 	clearInterval(interval);
 	interval=null;
+}
+function clearGame(){
+        stage.removePlayer(stage.player);
+	document.removeEventListener('keydown', moveByKey);
+        stage.canvas.removeEventListener('mousemove', mouseMove);
+        stage.canvas.removeEventListener('mousedown', mouseFire);
+        pauseGame();
 }
 function moveByKey(event){
 	var key = event.key;
@@ -116,18 +126,18 @@ function registration(){
 
 function play(){
         $("#ui_login").hide();
-        $("#lose_msg").hide();
         $("#navigation").show();
-        $("#ui_play").show();
+        if(stage.gameLost) $("#lose_msg").show();
+        else $("#ui_play").show();
         $("#instr").hide();
         $("#logout").on('click', function(){ login() });
 }
 
 function loggedin(){
         clearInterval(interval);
-        play();
         setupGame();
         startGame();
+        play();
 
         $("#instruction").on('click', function(){instruction();})
         $("#play").on('click', function(){play();})

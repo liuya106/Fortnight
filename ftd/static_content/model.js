@@ -2,8 +2,18 @@ function randint(n){ return Math.round(Math.random()*n); }
 function rand(n){ return Math.random()*n; }
 
 class Stage {
-	constructor(canvas){
+	constructor(canvas, difficulty){
 		this.canvas = canvas;
+		this.gameLost = false;
+
+		// GAME PARAMETERS
+		var difficultyMap = { 
+			'easy': {'playerDamage': 200, 'opponentDamage': 10, 'numOpponents': 15, 'numObstacles': 40},
+			'medium': {'playerDamage': 100, 'opponentDamage': 20, 'numOpponents': 25, 'numObstacles': 25},
+			'hard': {'playerDamage': 50, 'opponentDamage': 30, 'numOpponents': 35, 'numObstacles': 20},
+			'nightmare': {'playerDamage': 50, 'opponentDamage': 100, 'numOpponents': 50, 'numObstacles': 20}
+		};
+		this.params = difficultyMap[difficulty];
 	
 		this.actors=[]; // all actors on this stage (monsters, player, boxes, ...)
 		this.player=null; // a special actor, the player
@@ -17,35 +27,51 @@ class Stage {
 		var radius = 10;
 		var colour= 'rgba(0,0,0,1)';
 		var position = new Pair(Math.floor(this.width/2), Math.floor(this.height/2));
-		this.addPlayer(new Player(this, position, velocity, colour, radius));
+		this.addPlayer(new Player(this, position, velocity, colour, radius, 100));
 	
-		// Add in some Balls
-		var total=25;
+		// add amunition on map
+		var total=this.params['numObstacles'];
 		while(total>0){
-			var x=Math.floor((Math.random()*this.width)); 
-			var y=Math.floor((Math.random()*this.height)); 
-			if(this.getActor(x,y)===null){
-				var velocity = new Pair(rand(6), rand(6));
-				var red=randint(255), green=randint(255), blue=randint(255);
-				var radius = randint(10) + 10;
-				var alpha = Math.random();
-				var colour= 'rgba('+red+','+green+','+blue+','+alpha+')';
-				var position = new Pair(x,y);
-				var b = new Enemy(this, position, velocity, colour, radius);
-				this.addActor(b);
-
-				// add amunition on map
-				if(total % 1 == 0){
-					position = new Pair(x + 20,y + 20);
-					velocity = new Pair(0, 0);
-					var a = new Amunition(this, position, velocity, colour, radius*3+40);
-					this.addActor(a);
-				}
-
-				total--;
-			}
+			var values = this.ballValues(80, 30);
+			var a = new Amunition(this, values['position'], values['velocity'], values['colour'], values['radius']);
+			this.addActor(a);
+			total--;
 		}
+		// Add in some Balls
+		var total=this.params['numOpponents'];
+		while(total>0){
+			var values = this.ballValues(10, 10);
+			this.addEnemy(values['position'], values['velocity'], values['colour'], values['radius']);
+			total--;
+		}
+		
+		
+	}
 
+	ballValues(radiusLower, radiusRange){
+		var red=randint(255), green=randint(255), blue=randint(255);
+		return {
+		'velocity': new Pair(0, 0),
+		'radius': randint(radiusRange) + radiusLower,
+		'colour': 'rgba('+red+','+green+','+blue+','+Math.random()+')',
+		'position': new Pair(Math.floor((Math.random()*this.width)),
+		Math.floor((Math.random()*this.height)))}
+	}
+
+	addEnemy(position, velocity, colour, radius){
+		var tries = 0;
+		while(tries < 10){
+			var position = new Pair(Math.floor((Math.random()*this.width)),
+									Math.floor((Math.random()*this.height)));
+			let b = new Enemy(this, position, velocity, colour, radius, 100);
+			for(var i=0;i<this.actors.length;i++){
+				if(!b.collide(b.position.x, b.position.y,this.actors[i])){
+					this.addActor(b);
+					return;
+				}
+			}
+			tries++;
+		}
 		
 	}
 
@@ -113,11 +139,21 @@ class Stage {
 	}
 
 	inRenderRange(actor){
-		var minX = this.player.x - this.canvas.width / 2;
-		var maxX = this.player.x + this.canvas.width / 2;
-		var minY = this.player.y - this.canvas.height / 2;
-		var maxY = this.player.y + this.canvas.height / 2;
+		// var edges = actor.getEdges();
+		// var xView = new Pair(this.player.x - this.canvas.width/2, this.player.x + this.canvas/this.width/2);
+		// var yView = new Pair(this.player.y - this.canvas.height/2, this.player.y + this.canvas/this.height/2);
+		// var seeRightEdge = edges.x.y >= xView.x;
+		// var seeLeftEdge = edges.x.x <= xView.y;
+		// var seeBotEdge = edges.y.y >= yView.x;
+		// var seeTopEdge = edges.y.x >= yView.y;
+		// return (seeLeftEdge || seeRightEdge) && (seeBotEdge || seeTopEdge);
+
+		var minX = this.player.x - this.canvas.width / 2 - actor.radius;
+		var maxX = this.player.x + this.canvas.width / 2 + actor.radius;
+		var minY = this.player.y - this.canvas.height / 2 - actor.radius;
+		var maxY = this.player.y + this.canvas.height / 2 + actor.radius;
 		return actor.x >= minX && actor.x <= maxX && actor.y >= minY && actor.y <= maxY;
+
 	}
 } // End Class Stage
 
@@ -147,7 +183,6 @@ class Ball {
 		this.colour = colour;
 		this.radius = radius;
 
-		this.health = 100;
 		this.quadrant = new Pair(-1, -1);
 		this.facing = Math.PI / 2;
 
@@ -169,6 +204,7 @@ class Ball {
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
 			if(this != actor && this.collide(newX, newY, actor)){
+				// this.onCollision(newX, newY,actor);
 				this.velocity.x = 0;
 				this.velocity.y = 0;
 				return;
@@ -178,7 +214,6 @@ class Ball {
 		this.position.x=this.position.x+this.velocity.x;
 		this.position.y=this.position.y+this.velocity.y;
 
-		this.intPosition();
 			
 		// stay in boundary
 		if(this.position.x<0){
@@ -193,6 +228,8 @@ class Ball {
 		if(this.position.y>this.stage.height){
 			this.position.y=this.stage.height;
 		}
+		this.intPosition();
+
 	}
 	intPosition(){
 		this.x = Math.round(this.position.x);
@@ -270,33 +307,33 @@ class Ball {
 		return true;
 	}
 
-	checkObstacle(other){
-		var edges = this.getEdges(this.x, this.y);
+	onCollision(x, y, other){
+		var edges = this.getEdges(x, y);
+
 		var otherEdges = other.getEdges(other.x, other.y);
-		if(edges.x.x < otherEdges.x.y){
-			// this.x = otherEdges.x.y + this.radius;	
+		if(this.velocity.x>0 && edges.x.x < otherEdges.x.y){
+			this.position.x = otherEdges.x.y + this.radius;
 			document.getElementById('temp').innerHTML=1;}
-		else if(edges.x.y > otherEdges.x.x){
-			this.x = otherEdges.x.x - this.radius;	
+		else if(this.velocity.x>0 && edges.x.y > otherEdges.x.x){
+			this.position.x = otherEdges.x.x - this.radius;	
 			document.getElementById('temp').innerHTML=2;}
-		else if(edges.y.x < otherEdges.y.y)
-			this.y = otherEdges.y.y + this.radius;	
-		else if(edges.y.y > otherEdges.y.x)
-			this.y = otherEdges.y.x - this.radius;
-		else
-			return false;		
+		else if(this.velocity.y>0 && edges.y.x < otherEdges.y.y)
+			this.position.y = otherEdges.y.y + this.radius;	
+		else if(this.velocity.y>0 && edges.y.y > otherEdges.y.x)
+			this.position.y = otherEdges.y.x - this.radius;
+		this.intPosition();	
 	}
 
 	// whenever hit by a bullet
-	onBulletHit(){
+	onBulletHit(damage){
 		this.stage.removeActor(this);
 	}
 }
 
 class Player extends Ball {
-	constructor(stage, position, velocity, colour, radius){
+	constructor(stage, position, velocity, colour, radius, hp){
 		super(stage, position, velocity, colour, radius);
-
+		this.health = hp;
 		this.amunition = 24;
 	}
 
@@ -324,15 +361,20 @@ class Player extends Ball {
 			var posision = new Pair(hand.x + this.x, hand.y + this.y);
 			var velocity = this.getOffset(20, this.facing);
 			var color = 'rgba(255, 0, 0, 1)';
-			stage.addActor(new Bullet(stage, posision, velocity, color, 4));
+			stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, stage.params['playerDamage']));
 		}
 		this.amunition--;
+	}
+
+	inVicinity(actor){
+		return this.collide(this.x-8,this.y-8,actor) || this.collide(this.x+8,this.y-8,actor) || 
+		this.collide(this.x-8,this.y+8,actor) || this.collide(this.x+8,this.y+8,actor)
 	}
 
 	refill(){
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
-			if(this != actor && actor instanceof Amunition && this.collide(this.x,this.y,actor)){
+			if(this != actor && actor instanceof Amunition && this.inVicinity(actor)){
 				this.amunition += 6;
 				this.stage.removeActor(actor);
 				return;
@@ -341,10 +383,11 @@ class Player extends Ball {
 	}
 
 	// whenever hit by a bullet
-	onBulletHit(){
-		this.health -= 10;
+	onBulletHit(damage){
+		this.health -= damage;
 		if(this.health <= 0){
-			this.stage.removeActor(this);
+			this.stage.gameLost=true;
+
 			$("#ui_play").hide();
 			$("#lose_msg").show();
 		}
@@ -353,9 +396,9 @@ class Player extends Ball {
 }
 
 class Enemy extends Ball{
-	constructor(stage, position, velocity, colour, radius){
+	constructor(stage, position, velocity, colour, radius, hp){
 		super(stage, position, velocity, colour, radius);
-
+		this.health = hp;
 		// fire time interval
 		this.cooldown = randint(100);
 	}
@@ -364,7 +407,7 @@ class Enemy extends Ball{
 		var posision = new Pair(hand.x + this.x, hand.y + this.y);
 		var velocity = this.getOffset(15, this.facing);
 		var color = 'rgba(255, 0, 0, 1)';
-		stage.addActor(new Bullet(stage, posision, velocity, color, 4));
+		stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, this.stage.params['opponentDamage']));
 	}
 
 	// face the player and take a step; fires if no cooldown
@@ -386,15 +429,29 @@ class Enemy extends Ball{
 		super.draw(context);
 		this.drawFacing(context, 'rgba(160,100,0,1)');
 	}
+
+	// whenever hit by a bullet
+	onBulletHit(damage){
+		this.health -= damage;
+		if(this.health <= 0){
+			this.stage.removeActor(this);
+
+		}
+	}
 }
 
 
 class Bullet extends Ball{
+	constructor(stage, position, velocity, colour, radius, hp, damage){
+		super(stage, position, velocity, colour, radius, hp);
+		this.health = hp;
+		this.damage = damage;
+	}
 	step(){
 		this.position.x=this.position.x+this.velocity.x;
 		this.position.y=this.position.y+this.velocity.y;
 		this.intPosition();
-		this.health-=3;
+		this.health--;
 		if(this.health < 0){
 			this.stage.removeActor(this);
 			return;
@@ -403,7 +460,7 @@ class Bullet extends Ball{
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
 			if(this != actor && this.collide(this.x,this.y,actor)){
-				actor.onBulletHit();
+				actor.onBulletHit(this.damage);
 				stage.removeActor(this);
 				return;
 			}
@@ -440,15 +497,15 @@ class Amunition extends Ball{
 		return;
 	}
 
-	onBulletHit(){
+	onBulletHit(damage){
 		return;
 	}
 
-	getEdges(){
-		var leftEdge = Math.round(this.x);
-		var rightEdge = Math.round(this.x + this.radius);
-		var topEdge = Math.round(this.y);
-		var botEdge = Math.round(this.y + this.radius);
+	getEdges(x, y){
+		var leftEdge = Math.round(x);
+		var rightEdge = Math.round(x + this.radius);
+		var topEdge = Math.round(y);
+		var botEdge = Math.round(y + this.radius);
 		return new Pair(new Pair(leftEdge, rightEdge), new Pair(topEdge, botEdge));
 	}
 
