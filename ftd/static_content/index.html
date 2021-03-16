@@ -10,11 +10,11 @@
 			#ui_login { display:block; }
 			#ui_play { display:none; }
 			#navigation {display:flex;justify-content:space-between;}
-			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;width:50%;height:min-content;padding:0px;}
-			#navigation button{border:none;}
+			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;width:50%;padding:0px;}
+			#navigation button{border:none;background-color: #0190F5;color:white;margin:5px;padding: 15px;text-align: center;width:500px;}
 			#navigation button:hover{background-color:black;color:white;}
 			footer{position: fixed;bottom: 0;width: 100%;text-align: center;}
-			body{background-color:#eeeeee;}
+			body{background-color:#eeeeee; margin-bottom:5%;}
 			button{color:#8F01F5;}
 		</style>
 		<title>f0rt9it32d</title>
@@ -24,11 +24,11 @@
 			<nav id="navigation">
 				<h1>f0rt9it32d </h1>
 				<ul>
-					<li id="play"><button>Play</button></li>
-					<li id="instruction"><button>Instruction</button></li>
-					<li id="stats"><button>Stats</button></li>
-					<li id="profile"><button>Profile</button></li>
-					<li id='logout'><button>Logout</button></li>
+					<button id="play">Play</button>
+					<button id="instruction">Instruction</button>
+					<button id="stats">Stats</button>
+					<button id="profile">Profile</button>
+					<button id="logout">Logout</button>
 				</ul>
 			</nav>
 
@@ -57,8 +57,8 @@
 						
 				<label for="again">Password Again*</label>
 				<input id="again" name="again" type="password" minlength="8" required><br/>
-
-				<hr/>
+				<br/><br/>
+				<button type="submit" name="register" value="registered">Sign up</button><br/><br/>
 			</div>
 			
 
