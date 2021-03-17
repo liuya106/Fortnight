@@ -8,15 +8,14 @@ class Stage {
 
 		// GAME PARAMETERS
 		var difficultyMap = { 
-			'easy': {'playerDamage': 200, 'opponentDamage': 10, 'numOpponents': 10, 'numObstacles': 40},
-			'medium': {'playerDamage': 100, 'opponentDamage': 20, 'numOpponents': 15, 'numObstacles': 25},
-			'hard': {'playerDamage': 50, 'opponentDamage': 30, 'numOpponents': 20, 'numObstacles': 20},
-			'nightmare': {'playerDamage': 50, 'opponentDamage': 100, 'numOpponents': 25, 'numObstacles': 20}
+			'easy': {'playerDamage': 200, 'opponentDamage': 10, 'numOpponents': 10, 'numObstacles': 35, 'numHealthPacks': 20},
+			'medium': {'playerDamage': 100, 'opponentDamage': 20, 'numOpponents': 15, 'numObstacles': 30, 'numHealthPacks': 15},
+			'hard': {'playerDamage': 50, 'opponentDamage': 30, 'numOpponents': 20, 'numObstacles': 25, 'numHealthPacks': 10},
+			'nightmare': {'playerDamage': 50, 'opponentDamage': 100, 'numOpponents': 25, 'numObstacles': 25, 'numHealthPacks': 5}
 		};
 		this.params = difficultyMap[difficulty];
 	
 		this.actors=[]; // all actors on this stage (monsters, player, boxes, ...)
-		// this.items = []; // all items (also in actoes) on this stage for quick access
 		this.player=null; // a special actor, the player
 		this.score=0;
 	
@@ -24,30 +23,38 @@ class Stage {
 		this.width=canvas.width * 3;
 		this.height=canvas.height * 3;
 
-		// Add the player to the center of the stage
-		var velocity = new Pair(0,0);
-		var radius = 10;
-		var colour= 'rgba(0,0,0,1)';
-		var position = new Pair(Math.floor(this.width/2), Math.floor(this.height/2));
-		this.addPlayer(new Player(this, position, velocity, colour, radius, 100));
+		this.generatePlayer();
 	
 		// add amunition on map
-		var total=this.params['numObstacles'];
-		while(total>0){
-			var values = this.ballValues(80, 30);
-			var a = new Amunition(this, values['position'], values['velocity'], values['colour'], values['radius'], 'Shotgun', 6);
-			this.addActor(a);
-			total--;
-		}
+		this.generateActors('Amunition', this.params['numObstacles'], 80, 30);
+
+		this.generateActors('HealthPack', this.params['numHealthPacks'], 40, 10);
+
 		this.enemies = 0;
-		// Add in some Enemies
-		var total=this.params['numOpponents'];
-		while(total>0){
-			this.addEnemy(10, 10);
-			total--;
-		}
+		this.generateActors('Enemy', this.params['numOpponents'], 12, 4);
+
 		var weapon = new Shotgun(this, null, 6, 18, 100);
-		this.addActor(new Item(this, new Pair(1000, 1000), new Pair(0, 0), 'rgba(255, 255, 0, 1)', 40, weapon));
+		this.addActor(new Item(this, new Pair(randint(this.width), randint(this.height)), new Pair(0, 0), 'rgba(255, 255, 0, 1)', 40, weapon));
+
+	}
+
+	// Add the player to the center of the stage
+	generatePlayer(){
+		var position = new Pair(Math.floor(this.width/2), Math.floor(this.height/2));
+		this.addPlayer(new Player(this, position, new Pair(0,0), 'rgba(0,0,0,1)', 10, 100));
+	}
+
+	generateActors(type, count, radiusMin, radiusRange){
+		while(count > 0){
+			var values = this.ballValues(radiusMin, radiusRange);
+			if(type == 'Amunition')
+				this.addActor(new Amunition(this, values['position'], values['velocity'], values['colour'], values['radius']));
+			else if(type == 'HealthPack')
+				this.addActor(new HealthPack(this, values['position'], values['velocity'], values['colour'], values['radius']));
+			else if(type == 'Enemy')
+				this.addEnemy(radiusMin, radiusRange);
+			count--;
+		}
 
 	}
 
@@ -62,9 +69,10 @@ class Stage {
 	}
 
 	addEnemy(radiusMin, radiusRange){
+		var typeMap = {0: 'Enemy', 1: 'Gunner', 2: 'Shielder'};
 		var tries = 0;
 		while(tries < 10){
-			let b = this.enemyFactory(radiusMin, radiusRange, 'Gunner');
+			let b = this.enemyFactory(radiusMin, radiusRange, typeMap[randint(2)]);
 			for(var i=0;i<this.actors.length;i++){
 				if(!b.collide(b.position.x, b.position.y,this.actors[i])){
 					this.addActor(b);
@@ -80,8 +88,12 @@ class Stage {
 		var values = this.ballValues(radiusMin, radiusRange);
 		var position = new Pair(Math.floor((Math.random()*this.width)),
 		Math.floor((Math.random()*this.height)));
-		if(type == 'Gunner')
-			return new Gunner(this, position, values['velocity'], values['colour'], values['radius'], 100, 200);
+		if(type == 'Enemy')
+			return new Enemy(this, position, values['velocity'], values['colour'], values['radius']-3, 100, 200);
+		else if(type == 'Gunner')
+			return new Gunner(this, position, values['velocity'], values['colour'], 20, 100, 200);
+		else if(type == 'Shielder')
+			return new Shielder(this, position, values['velocity'], values['colour'], values['radius'], 100, 200);
 	}
 
 	addPlayer(player){
@@ -109,7 +121,7 @@ class Stage {
 	// NOTE: Careful if an actor died, this may break!
 	step(){
 		while(this.enemies < this.params['numOpponents']){
-			this.addEnemy(10, 10);
+			this.addEnemy(12, 3);
 		}
 		for(var i=0;i<this.actors.length;i++){
 			this.actors[i].step();
@@ -226,7 +238,7 @@ class Ball {
 
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
-			if(this != actor && this.collide(newX, newY, actor)){
+			if(this != actor && !(actor instanceof Bullet) && this.collide(newX, newY, actor)){
 				// this.onCollision(newX, newY,actor);
 				this.velocity.x = 0;
 				this.velocity.y = 0;
@@ -378,6 +390,9 @@ class Player extends Ball {
 					actor.refill(this.weapon1);
 					actor.refill(this.weapon2);
 				}
+				else if(actor instanceof HealthPack){
+					this.health += 50;
+				}
 				// pick up item
 				else if(this.weapon2 == null){
 					this.weapon2 = actor.item;
@@ -478,7 +493,7 @@ class Enemy extends Ball{
 	// draw this enemy and its gun
 	draw(context){
 		super.draw(context);
-		this.drawFacing(context, 'rgba(160,100,0,1)');
+		this.drawFacing(context, 'rgba('+(255-this.cooldown)+',0,0,1)');
 	}
 
 	// whenever hit by a bullet
@@ -516,10 +531,56 @@ class Gunner extends Enemy{
 			this.loaded = 10;
 		}
 	}
+}
+
+class Shielder extends Enemy{
+	constructor(stage, position, velocity, colour, radius, hp, range){
+		super(stage, position, velocity, colour, radius, hp, range);
+		this.shieldMax = hp;
+		this.shield = hp;
+		this.rechargeTime = 200;
+	}
+
+	step(){
+		this.recharge();
+		super.step();
+	}
+
+	// recharge this shield if not on cooldown recharge time
+	recharge(){
+		// maximum shield
+		if(this.shield == this.shieldMax) return;
+
+		if(this.rechargeTime == 0 && this.shield < this.shieldMax){
+			this.shield++;
+		} else{
+			this.rechargeTime--;
+		}
+	}
+
 	// draw this enemy and its gun
 	draw(context){
+		if(this.shield > 0){
+			context.fillStyle = 'rgba(135, 186, 237, 1)';
+			context.beginPath(); 
+			context.arc(this.x, this.y, Math.round(this.radius * 1.3), 0, 2 * Math.PI, false); 
+			context.fill(); 
+		}
 		super.draw(context);
-		this.drawFacing(context, 'rgba('+(255-this.cooldown)+',0,0,1)');
+	}
+
+	onBulletHit(damage){
+		// shield should not recharge after some time being hit
+		this.rechargeTime = 200;
+
+		var consumed = Math.min(this.shield, damage);
+
+		// no shield left
+		if(consumed == 0) super.onBulletHit(damage);
+		// not enough shield to absore all damage
+		else if(consumed != damage) super.onBulletHit(damage - consumed);
+		
+		this.shield -= consumed;
 	}
 }
 
@@ -542,7 +603,7 @@ class Bullet extends Ball{
 		// check if this bullet hits anything
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
-			if(this != actor && this.collide(this.x,this.y,actor)){
+			if(this != actor && !(actor instanceof Bullet) && this.collide(this.x,this.y,actor)){
 				if(actor.onBulletHit(this.damage) && this.from=='player') this.stage.score++;
 				stage.removeActor(this);
 				return;
@@ -598,16 +659,21 @@ class Item extends Ball{
 }
 
 class Amunition extends Item{
-	constructor(stage, position, velocity, colour, radius, type, amount){
+	constructor(stage, position, velocity, colour, radius){
 		super(stage, position, velocity, colour, radius);
 		this.colour='rgba('+45+','+82+','+45+','+1+')';
-		this.type = type;
-		this.amount = amount;
 	}
 	refill(weapon){
 		if(weapon == null) return;
 		if(weapon instanceof Pistol) weapon.amunition += 30;
 		else if(weapon instanceof Shotgun) weapon.amunition += 9;
+	}
+}
+
+class HealthPack extends Item{
+	constructor(stage, position, velocity, colour, radius){
+		super(stage, position, velocity, colour, radius);
+		this.colour='rgba('+244+','+87+','+82+','+1+')';
 	}
 }
 
