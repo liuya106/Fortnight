@@ -41,8 +41,11 @@ function moveByKey(event){
 	if(key in moveMap){
 		stage.player.velocity=moveMap[key];
 	} else if(key == 'e'){
-                stage.player.refill();
-        }
+                stage.player.interact();
+        } else if(key == 'r')
+                stage.player.reload();
+        else if(key == 'q')
+                stage.player.switchWeapon();
 }
 
 function mouseFire(){

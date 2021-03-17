@@ -16,6 +16,7 @@ class Stage {
 		this.params = difficultyMap[difficulty];
 	
 		this.actors=[]; // all actors on this stage (monsters, player, boxes, ...)
+		// this.items = []; // all items (also in actoes) on this stage for quick access
 		this.player=null; // a special actor, the player
 		this.score=0;
 	
@@ -34,7 +35,7 @@ class Stage {
 		var total=this.params['numObstacles'];
 		while(total>0){
 			var values = this.ballValues(80, 30);
-			var a = new Amunition(this, values['position'], values['velocity'], values['colour'], values['radius']);
+			var a = new Amunition(this, values['position'], values['velocity'], values['colour'], values['radius'], 'Shotgun', 6);
 			this.addActor(a);
 			total--;
 		}
@@ -45,6 +46,9 @@ class Stage {
 			this.addEnemy(10, 10);
 			total--;
 		}
+		var weapon = new Shotgun(this, null, 6, 18, 100);
+		this.addActor(new Item(this, new Pair(1000, 1000), new Pair(0, 0), 'rgba(255, 255, 0, 1)', 40, weapon));
+
 	}
 
 	ballValues(radiusMin, radiusRange){
@@ -58,12 +62,9 @@ class Stage {
 	}
 
 	addEnemy(radiusMin, radiusRange){
-		var values = this.ballValues(radiusMin, radiusRange);
 		var tries = 0;
 		while(tries < 10){
-			var position = new Pair(Math.floor((Math.random()*this.width)),
-									Math.floor((Math.random()*this.height)));
-			let b = new Gunner(this, position, values['velocity'], values['colour'], values['radius'], 100, 200);
+			let b = this.enemyFactory(radiusMin, radiusRange, 'Gunner');
 			for(var i=0;i<this.actors.length;i++){
 				if(!b.collide(b.position.x, b.position.y,this.actors[i])){
 					this.addActor(b);
@@ -73,7 +74,14 @@ class Stage {
 			}
 			tries++;
 		}
-		
+	}
+
+	enemyFactory(radiusMin, radiusRange, type){
+		var values = this.ballValues(radiusMin, radiusRange);
+		var position = new Pair(Math.floor((Math.random()*this.width)),
+		Math.floor((Math.random()*this.height)));
+		if(type == 'Gunner')
+			return new Gunner(this, position, values['velocity'], values['colour'], values['radius'], 100, 200);
 	}
 
 	addPlayer(player){
@@ -109,6 +117,8 @@ class Stage {
 	}
 
 	draw(){
+		this.showStats();
+
 		// show player coordinates
 		var s = document.getElementById('player_coords');
 		s.innerHTML = 'player coords: ' + this.player.x + ", " + this.player.y;
@@ -130,6 +140,16 @@ class Stage {
 
 		context.restore();
 	}
+
+	// display game stats such as player health, score, and amunition.
+	showStats(){
+		var info = document.getElementById('player_info')
+		info.innerHTML = 'Health: ' + this.player.health +  
+		'&nbsp;&nbsp;&nbsp;&nbsp;Score: ' + this.score + 
+		'&nbsp;&nbsp;&nbsp;&nbsp;' + this.player.getAmunitionInfo();			
+	}
+
+
 
 	// return the first actor at coordinates (x,y) return null if there is no such actor
 	getActor(x, y){
@@ -258,7 +278,7 @@ class Ball {
 	// helper function that computes the quadrant of coordinates
 	// at (px, py) relative to this
 	face(px, py){
-		// compute the x, y distance from player
+		// compute the x, y distance from this to px,py
 		var dx = Math.abs(px - this.x);
 		var dy = Math.abs(py - this.y);
 		// calculate angle based on the x, y component
@@ -310,22 +330,21 @@ class Ball {
 		return true;
 	}
 
-	onCollision(x, y, other){
-		var edges = this.getEdges(x, y);
-
-		var otherEdges = other.getEdges(other.x, other.y);
-		if(this.velocity.x>0 && edges.x.x < otherEdges.x.y){
-			this.position.x = otherEdges.x.y + this.radius;
-			document.getElementById('temp').innerHTML=1;}
-		else if(this.velocity.x>0 && edges.x.y > otherEdges.x.x){
-			this.position.x = otherEdges.x.x - this.radius;	
-			document.getElementById('temp').innerHTML=2;}
-		else if(this.velocity.y>0 && edges.y.x < otherEdges.y.y)
-			this.position.y = otherEdges.y.y + this.radius;	
-		else if(this.velocity.y>0 && edges.y.y > otherEdges.y.x)
-			this.position.y = otherEdges.y.x - this.radius;
-		this.intPosition();	
-	}
+	// onCollision(x, y, other){
+	// 	var edges = this.getEdges(x, y);
+	// 	var otherEdges = other.getEdges(other.x, other.y);
+	// 	if(this.velocity.x>0 && edges.x.x < otherEdges.x.y){
+	// 		this.position.x = otherEdges.x.y + this.radius;
+	// 		document.getElementById('temp').innerHTML=1;}
+	// 	else if(this.velocity.x>0 && edges.x.y > otherEdges.x.x){
+	// 		this.position.x = otherEdges.x.x - this.radius;	
+	// 		document.getElementById('temp').innerHTML=2;}
+	// 	else if(this.velocity.y>0 && edges.y.x < otherEdges.y.y)
+	// 		this.position.y = otherEdges.y.y + this.radius;	
+	// 	else if(this.velocity.y>0 && edges.y.y > otherEdges.y.x)
+	// 		this.position.y = otherEdges.y.x - this.radius;
+	// 	this.intPosition();	
+	// }
 
 	// whenever hit by a bullet
 	onBulletHit(damage){
@@ -339,41 +358,55 @@ class Player extends Ball {
 		super(stage, position, velocity, colour, radius);
 		// this.health = hp;
 		this.health = hp * 100;
-		this.amunition = 24;
+		this.damage = stage.params['playerDamage'];
+		this.weapon1 = new Pistol(this.stage, this, 15, 45);
+		this.weapon2 = null;
 	}
 
+	// draw the player and their weapon
 	draw(context){
-		this.showStats();
-
-		// draw the player
 		super.draw(context);
-
-		// draw the player's weapon
 		this.drawFacing(context, 'rgba(220,100,0,1)');
 	}
 
-	showStats(){
-		var info = document.getElementById('player_info')
-		info.innerHTML = 'Health: ' + this.health +  
-			'&nbsp;&nbsp;&nbsp;&nbsp;Amunition: ' + this.amunition + 
-			'&nbsp;&nbsp;&nbsp;&nbsp;Score: ' + this.stage.score;
+	interact(){
+		for(var i=0;i<this.stage.actors.length;i++){
+			var actor = this.stage.actors[i];
+			if(this != actor && actor instanceof Item && this.inVicinity(actor)){
+				// pick up ammo
+				if(actor instanceof Amunition) {
+					actor.refill(this.weapon1);
+					actor.refill(this.weapon2);
+				}
+				// pick up item
+				else if(this.weapon2 == null){
+					this.weapon2 = actor.item;
+					this.weapon2.owner = this;
+				}
+				this.stage.removeActor(actor);
+				return;
+			}
+		}
 	}
 
-	// fire a shotgun of three small bullets
+	// fire a shotgun of three small loaded
 	fire(){
-		if(this.amunition <= 0)
-			return;
-		
-		for(var i=-1; i<2;i++){
-			// each bullet has 45 degrees of spacing
-			var spacing = 45 * Math.PI / 180;
-			var hand = this.getOffset(25, this.facing + i * spacing);
-			var posision = new Pair(hand.x + this.x, hand.y + this.y);
-			var velocity = this.getOffset(20, this.facing);
-			var color = 'rgba(255, 0, 0, 1)';
-			stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, stage.params['playerDamage'], 'player'));
+		this.weapon1.shoot();
+	}
+
+	getAmunitionInfo(){
+		var s =  this.weapon1.getAmunitionInfo();
+		if(this.weapon2 != null){
+			s += "&nbsp;&nbsp;&nbsp;&nbsp;" + this.weapon2.getAmunitionInfo();
 		}
-		this.amunition--;
+		return s;
+	}
+
+	switchWeapon(){
+		if(this.weapon2 == null) return;
+		var temp = this.weapon1;
+		this.weapon1 = this.weapon2;
+		this.weapon2 = temp;
 	}
 
 	inVicinity(actor){
@@ -381,15 +414,8 @@ class Player extends Ball {
 		this.collide(this.x-8,this.y+8,actor) || this.collide(this.x+8,this.y+8,actor)
 	}
 
-	refill(){
-		for(var i=0;i<this.stage.actors.length;i++){
-			var actor = this.stage.actors[i];
-			if(this != actor && actor instanceof Amunition && this.inVicinity(actor)){
-				this.amunition += 6;
-				this.stage.removeActor(actor);
-				return;
-			}
-		}
+	reload(){
+		this.weapon1.reload();
 	}
 
 	// whenever hit by a bullet
@@ -471,7 +497,7 @@ class Gunner extends Enemy{
 	constructor(stage, position, velocity, colour, radius, hp, range){
 		super(stage, position, velocity, colour, radius, hp, range);
 		this.cooldown = randint(400);
-		this.bullets = 10;
+		this.loaded = 10;
 	}
 
 	fire(){
@@ -483,11 +509,11 @@ class Gunner extends Enemy{
 	}
 
 	resetCooldown(){
-		this.bullets--;
+		this.loaded--;
 		this.cooldown = 3;
-		if(this.bullets==0){
+		if(this.loaded==0){
 			this.cooldown = 400;
-			this.bullets = 10;
+			this.loaded = 10;
 		}
 	}
 	// draw this enemy and its gun
@@ -522,7 +548,6 @@ class Bullet extends Ball{
 				return;
 			}
 		}
-
 		//bounce off the walls
 		if(this.position.x<0){
 			this.position.x=0;
@@ -540,11 +565,15 @@ class Bullet extends Ball{
 			this.position.y=this.stage.height;
 			this.velocity.y=-Math.abs(this.velocity.y);
 		}
-		
 	}
 }
 
-class Amunition extends Ball{
+class Item extends Ball{
+	constructor(stage, position, velocity, colour, radius, item){
+		super(stage, position, velocity, colour, radius);
+		this.item = item;  // what this item holds
+	}
+
 	step(){
 		return;
 	}
@@ -566,5 +595,90 @@ class Amunition extends Ball{
 		context.fillStyle = this.colour;
    		context.fillRect(this.x, this.y, this.radius,this.radius);
 	}
-	
+}
+
+class Amunition extends Item{
+	constructor(stage, position, velocity, colour, radius, type, amount){
+		super(stage, position, velocity, colour, radius);
+		this.colour='rgba('+45+','+82+','+45+','+1+')';
+		this.type = type;
+		this.amount = amount;
+	}
+	refill(weapon){
+		if(weapon == null) return;
+		if(weapon instanceof Pistol) weapon.amunition += 30;
+		else if(weapon instanceof Shotgun) weapon.amunition += 9;
+	}
+}
+
+class Weapon{
+	constructor(stage, owner, magzine, amunition){
+		this.stage = stage;
+		this.owner = owner;
+		this.bulletLife = 30;
+		
+		this.magzine = magzine;  // amount of bullets in one magzine
+		this.loaded = magzine;
+		this.amunition = amunition;  // unloaded bullets
+	}
+
+	// reload this weapon
+	reload(){
+		if(this.amunition == 0) return;
+		var consumed = Math.min(this.magzine - this.loaded, this.amunition);
+		this.loaded += consumed;
+		this.amunition -= consumed;
+	}
+
+	addBullet(hand){
+		var posision = new Pair(hand.x + this.owner.x, hand.y + this.owner.y);
+		var velocity = this.owner.getOffset(20, this.owner.facing);
+		var color = 'rgba(255, 0, 0, 1)';
+		this.stage.addActor(new Bullet(this.stage, posision, velocity, color, 4, this.bulletLife, this.owner.damage, 'player'));
+	}
+}
+
+class Pistol extends Weapon{
+	// fire this pistol
+	shoot(){
+		if(this.loaded <= 0)
+			return;
+		var hand = this.owner.getOffset(25, this.owner.facing);
+		this.addBullet(hand);
+		this.loaded--;
+	}
+
+	getAmunitionInfo(){
+		return "Pistol: " + this.loaded + '/' + this.amunition;
+	}
+}
+
+class Shotgun extends Weapon{
+	constructor(stage, owner, magzine, amunition, durability){
+		super(stage, owner, magzine, amunition);
+		this.durability = durability;
+		this.bulletLife = 8;
+	}
+
+	// fire a shotgun of three small loaded
+	shoot(){
+		if(this.loaded <= 0)
+			return;
+		
+		for(var i=-1; i<2;i++){
+			// each bullet has 45 degrees of spacing
+			var spacing = 45 * Math.PI / 180;
+			var hand = this.owner.getOffset(25, this.owner.facing + i * spacing);
+			this.addBullet(hand);
+		}
+		this.loaded--;
+		this.durability--;
+		if(this.durability == 0){
+			this.break();
+		}
+	}
+
+	getAmunitionInfo(){
+		return "Shotgun: " + this.loaded + '/' + this.amunition;
+	}
 }
