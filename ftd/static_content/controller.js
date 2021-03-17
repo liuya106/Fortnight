@@ -2,6 +2,8 @@ var stage=null;
 var view = null;
 var interval=null;
 var credentials={ "username": "", "password":"" };
+var start = null;
+var remaining = null;
 function setupGame(){
 	stage=new Stage(document.getElementById('stage'), 'hard');
 	// https://javascript.info/keyboard-events
@@ -16,18 +18,36 @@ function startGame(){
 	interval=setInterval(function(){ 
                 if(stage.gameLost) clearGame();
                 else{
-                        stage.step(); stage.draw(); }},50);
+                        stage.step(); stage.draw(); }
+                start = new Date();},50);
 }
 function pauseGame(){
+        remaining = 50 - (new Date() - start)%50;
 	clearInterval(interval);
 	interval=null;
 }
+
+function resumeGame(){
+        setTimeout(function(){ 
+                if(stage.gameLost) clearGame();
+                else{stage.step(); stage.draw();}
+                start = new Date();}, remaining);
+        interval=setInterval(function(){ 
+                if(stage.gameLost) clearGame();
+                else{
+                        stage.step(); stage.draw(); }
+                start = new Date();},50);
+        remaining = null;
+}
+
 function clearGame(){
         stage.removePlayer(stage.player);
 	document.removeEventListener('keydown', moveByKey);
         stage.canvas.removeEventListener('mousemove', mouseMove);
         stage.canvas.removeEventListener('mousedown', mouseFire);
         pauseGame();
+        start = null;
+        remaining = null;
 }
 function moveByKey(event){
 	var key = event.key;
@@ -96,6 +116,7 @@ function mouseMove(event){
 
 
 function instruction(){
+        pauseGame();
         $("#ui_login").hide();
         $("#ui_play").hide();
         $("#lose_msg").hide();
@@ -128,6 +149,7 @@ function registration(){
 }
 
 function play(){
+        if (remaining != null) resumeGame();
         $("#ui_login").hide();
         $("#navigation").show();
         if(stage.gameLost) $("#lose_msg").show();
