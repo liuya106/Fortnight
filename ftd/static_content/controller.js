@@ -150,6 +150,7 @@ function registered(){
                         login();
                 }).fail(function(err){
                         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+                        $("#prompt").html('register failed: user already exist!');
                 });
         }
 }

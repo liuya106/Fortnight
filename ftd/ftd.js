@@ -47,18 +47,28 @@ app.post('/api/auth/register', function (req, res) {
 
 		console.log(username+" "+password);
 
-		let sql = 'INSERT INTO ftduser (username, password) VALUES ($1, sha512($2))';
-        	pool.query(sql, [username, password], (err, pgRes) => {
-  			if (err){
-                		res.status(403).json({ error: 'Insert failure'});
-			} else if(pgRes.rowCount == 1){
-				res.status(200);
-			} else {
-                		res.status(403).json({ error: 'Unknown failure'});
-        		}
-		});
+		let sql = 'SELECT * FROM ftduser WHERE username=$1';
+		pool.query(sql, [username], (err, pgRes) => {
+			if (err){
+					  res.status(403).json({ error: 'query failure'});
+		  	} else if (pgRes.rowCount!=0) {
+			  res.status(400);
+			  res.json({"insert failure":"username already exist"}); 
+			}else{
+				let sql = 'INSERT INTO ftduser (username, password) VALUES ($1, sha512($2))';
+				pool.query(sql, [username, password], (err, pgRes) => {
+				if (err){
+							res.status(403).json({ error: 'Insert failure'});
+				} else {
+					res.status(200);
+					res.json({"message":"registration success"}); 
+					}
+				});
+			}
+	  	});
+
 	} catch(err) {
-               	res.status(403).json({ error: 'Not authorized'});
+               	res.status(403).json({ error: 'Not registered'});
 	}
 });
 
