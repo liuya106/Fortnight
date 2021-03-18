@@ -50,7 +50,7 @@ function clearGame(){
         remaining = null;
 }
 function moveByKey(event){
-	var key = event.key;
+	var key = event.key.toLowerCase();
 	var moveMap = { 
 		'a': new Pair(-8,0),
 		's': new Pair(0,8),
@@ -68,52 +68,20 @@ function moveByKey(event){
                 stage.player.switchWeapon();
 }
 
+// LMB to fire
 function mouseFire(){
         stage.player.fire();
 }
 
+// player turret follows mouse
 function mouseMove(event){
-	var m = document.getElementById('mouse_coords');
         // get the position of mouse
-        var px = stage.player.x - stage.canvas.width/2 + event.offsetX;
-        var py = stage.player.y - stage.canvas.height/2 + event.offsetY;
-        m.innerHTML = 'mouse coords: ' + px + ', ' + py;
+        var offset = stage.getTranslation();
+        var px = event.offsetX - offset.x;
+        var py = event.offsetY - offset.y;
 
-        // // compute the x, y distance from player
-        var dx = Math.abs(px - stage.player.x);
-        var dy = Math.abs(py - stage.player.y);
-        var theta = Math.atan(dy / dx);
-        // stage.player.facing = theta;
-
-        // 4 if/elseif clause for quadrant 1-4
         stage.player.face(px, py);
-
-        if(px > stage.player.x && py < stage.player.y){
-                // stage.player.quadrant.x = 1;
-                // stage.player.quadrant.y = -1;
-        }
-        else if(px < stage.player.x && py <= stage.player.y){
-                theta = Math.PI - theta;
-                // stage.player.quadrant.x = -1;
-                // stage.player.quadrant.y = -1;
-        }
-        else if(px < stage.player.x && py > stage.player.y){
-                theta += Math.PI;
-                // stage.player.quadrant.x = -1;
-                // stage.player.quadrant.y = 1;
-        }
-        else if(px >= stage.player.x && py > stage.player.y){
-                theta = Math.PI * 2 - theta;
-                // stage.player.quadrant.x = 1;
-                // stage.player.quadrant.y = 1;
-        }
-        
-        var deg = theta * (180 / Math.PI);
-        m.innerHTML += '; dx: '+ dx + ', dy: ' + dy + ', theta: ' + 
-                Math.round(theta * 100) / 100 + ', degree: ' + Math.round(deg);
 }
-
-
 
 function instruction(){
         $('div[class="ui"]').not('#nav,#instr').each(function(){
@@ -122,7 +90,10 @@ function instruction(){
         $('#nav,#instr').show();
 }
 
-function registered(){
+function registered(e){
+        if(!$("#form")[0].checkValidity()) return;
+        e.preventDefault();
+
         if ($("#user").val() == ''){
                 $("#prompt").html('Username cannot be empty!');
         }else if($("#regis_password").val() == ''){
@@ -149,6 +120,7 @@ function registered(){
                         console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
                         login();
                 }).fail(function(err){
+
                         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
                         $("#prompt").html('register failed: user already exist!');
                 });
@@ -156,30 +128,20 @@ function registered(){
 }
 
 function registration(){
-        $("#login").on('click', function(){login();});
-
         $('div[class="ui"]').not('#registration').each(function(){
                 $(this).hide();
         })
         $("#registration").show();
 
-        $("#registerSubmit").on('click', function(){registered();});
 }
 
 
 function play(){
-        $("#logout").on('click', function(){ clearGame(); login();} );
-        $("#instruction").on('click', function(){ pauseGame(); instruction();});
-        $("#play").on('click', function(){
-                if (stage.gameLost) {$("#lose_msg").hide();loggedin();}
-                else play();
-        });
-
-
         $('div[class="ui"]').not('#nav,#ui_play,#lose_msg').each(function(){
                 $(this).hide();
         })
-        if (remaining != null) resumeGame();
+        if (remaining != null && !stage.gameLost) {console.log(stage.gameLost);
+                resumeGame();}
         if(stage.gameLost) {
                 $("#lose_msg, #nav").show();
                 $("#ui_play").hide();
@@ -219,16 +181,13 @@ function loggedin(){
                         play();
                 }).fail(function(err){
                         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-                        $('#prom').html('username and password don"t match!');
+                        $('#prom').html("username and password don't match!");
                 });
         }
 }
 
-
+// show the login screen
 function login(){
-        $("#loginSubmit").on('click',function(){ loggedin(); });
-        $("#register").on('click', function(){ registration(); });
-
         $('div[class="ui"]').not('#ui_login').each(function(){
                 $(this).hide();
         });
@@ -252,6 +211,13 @@ function test(){
 
 $(function(){
         // Setup all events here and display the appropriate UI
+        $("#loginSubmit").on('click',function(){ loggedin(); });
+        $("#register").on('click', function(){ registration(); });
+        $("#login").on('click', function(){login();});
+        $("#registerSubmit").on('click', function(e){registered(e);});
+        $("#logout").on('click', function(){ clearGame(); login();} );
+        $("#instruction").on('click', function(){ pauseGame(); instruction();});
+        $("#play").on('click', function(){ play();});
         login();
 });
 

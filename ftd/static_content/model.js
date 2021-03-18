@@ -5,6 +5,7 @@ class Stage {
 	constructor(canvas, difficulty){
 		this.canvas = canvas;
 		this.gameLost = false;
+		this.difficulty = difficulty;
 
 		// GAME PARAMETERS
 		var difficultyMap = { 
@@ -18,6 +19,7 @@ class Stage {
 		this.actors=[]; // all actors on this stage (monsters, player, boxes, ...)
 		this.player=null; // a special actor, the player
 		this.score=0;
+		this.consumed_bullets = 0;
 	
 		// the logical width and height of the stage
 		this.width=canvas.width * 3;
@@ -33,7 +35,7 @@ class Stage {
 		this.enemies = 0;
 		this.generateActors('Enemy', this.params['numOpponents'], 12, 4);
 
-		var weapon = new Shotgun(this, null, 6, 18, 100);
+		var weapon = new Shotgun(this, null, 6, 18);
 		this.addActor(new Item(this, new Pair(randint(this.width), randint(this.height)), new Pair(0, 0), 'rgba(255, 255, 0, 1)', 40, weapon));
 
 	}
@@ -44,6 +46,7 @@ class Stage {
 		this.addPlayer(new Player(this, position, new Pair(0,0), 'rgba(0,0,0,1)', 10, 100));
 	}
 
+	// create and add actors of different types to stage
 	generateActors(type, count, radiusMin, radiusRange){
 		while(count > 0){
 			var values = this.ballValues(radiusMin, radiusRange);
@@ -58,6 +61,7 @@ class Stage {
 
 	}
 
+	// randomly generate values used for the creation of Ball
 	ballValues(radiusMin, radiusRange){
 		var red=randint(255), green=randint(255), blue=randint(255);
 		return {
@@ -68,6 +72,7 @@ class Stage {
 		Math.floor((Math.random()*this.height)))}
 	}
 
+	// add an Enemy instance to map
 	addEnemy(radiusMin, radiusRange){
 		var typeMap = {0: 'Enemy', 1: 'Gunner', 2: 'Shielder'};
 		var tries = 0;
@@ -84,6 +89,7 @@ class Stage {
 		}
 	}
 
+	// return an Enemy instance based on the arguments provided
 	enemyFactory(radiusMin, radiusRange, type){
 		var values = this.ballValues(radiusMin, radiusRange);
 		var position = new Pair(Math.floor((Math.random()*this.width)),
@@ -128,28 +134,37 @@ class Stage {
 		}
 	}
 
+	// return the translation needed for the camera to follow player
+	getTranslation(){
+		var view = new Pair(this.canvas.width/2 - this.player.x,
+			this.canvas.height/2 - this.player.y);
+		
+		// handles case when moving near borders
+		if(view.x > 0)
+			view.x = 0;
+		else if(-view.x > this.width - this.canvas.width)
+			view.x = -(this.width - this.canvas.width);
+		if(view.y > 0)
+			view.y = 0;
+		else if(-view.y > this.height - this.canvas.height)
+			view.y = -(this.height - this.canvas.height);
+		
+		return view;
+	}
+
 	draw(){
 		this.showStats();
-
-		// show player coordinates
-		var s = document.getElementById('player_coords');
-		s.innerHTML = 'player coords: ' + this.player.x + ", " + this.player.y;
 		var context = this.canvas.getContext('2d');
 		context.clearRect(0, 0, this.width, this.height);
 	
-
 		// translate canvas so that player is always centered
 		context.save();
-		context.translate(this.canvas.width/2 - this.player.x, 
-			this.canvas.height/2 - this.player.y);
-		
-		context.fillStyle = 'rgba(0,250,0,0.25)';
-		context.fillRect(0, 0, this.width, this.height);
+		var view = this.getTranslation();
+		context.translate(view.x, view.y);
 		for(var i=0;i<this.actors.length;i++){
 			if(this.inRenderRange(this.actors[i]))
 				this.actors[i].draw(context);
 		}
-
 		context.restore();
 	}
 
@@ -158,7 +173,7 @@ class Stage {
 		var info = document.getElementById('player_info')
 		info.innerHTML = 'Health: ' + this.player.health +  
 		'&nbsp;&nbsp;&nbsp;&nbsp;Score: ' + this.score + 
-		'&nbsp;&nbsp;&nbsp;&nbsp;' + this.player.getAmunitionInfo();			
+		'&nbsp;&nbsp;&nbsp;&nbsp;' + this.player.getAmunitionInfo();
 	}
 
 
@@ -174,19 +189,10 @@ class Stage {
 	}
 
 	inRenderRange(actor){
-		// var edges = actor.getEdges();
-		// var xView = new Pair(this.player.x - this.canvas.width/2, this.player.x + this.canvas/this.width/2);
-		// var yView = new Pair(this.player.y - this.canvas.height/2, this.player.y + this.canvas/this.height/2);
-		// var seeRightEdge = edges.x.y >= xView.x;
-		// var seeLeftEdge = edges.x.x <= xView.y;
-		// var seeBotEdge = edges.y.y >= yView.x;
-		// var seeTopEdge = edges.y.x >= yView.y;
-		// return (seeLeftEdge || seeRightEdge) && (seeBotEdge || seeTopEdge);
-
-		var minX = this.player.x - this.canvas.width / 2 - actor.radius;
-		var maxX = this.player.x + this.canvas.width / 2 + actor.radius;
-		var minY = this.player.y - this.canvas.height / 2 - actor.radius;
-		var maxY = this.player.y + this.canvas.height / 2 + actor.radius;
+		var minX = this.player.x - this.canvas.width - actor.radius;
+		var maxX = this.player.x + this.canvas.width + actor.radius;
+		var minY = this.player.y - this.canvas.height - actor.radius;
+		var maxY = this.player.y + this.canvas.height + actor.radius;
 		return actor.x >= minX && actor.x <= maxX && actor.y >= minY && actor.y <= maxY;
 
 	}
@@ -278,6 +284,7 @@ class Ball {
 		context.fill();   
 	}
 
+	// draw what this actor is facing
 	drawFacing(context, color){
 		var hand = this.getOffset(this.radius, this.facing);
 		context.fillStyle = color;
@@ -342,22 +349,6 @@ class Ball {
 		return true;
 	}
 
-	// onCollision(x, y, other){
-	// 	var edges = this.getEdges(x, y);
-	// 	var otherEdges = other.getEdges(other.x, other.y);
-	// 	if(this.velocity.x>0 && edges.x.x < otherEdges.x.y){
-	// 		this.position.x = otherEdges.x.y + this.radius;
-	// 		document.getElementById('temp').innerHTML=1;}
-	// 	else if(this.velocity.x>0 && edges.x.y > otherEdges.x.x){
-	// 		this.position.x = otherEdges.x.x - this.radius;	
-	// 		document.getElementById('temp').innerHTML=2;}
-	// 	else if(this.velocity.y>0 && edges.y.x < otherEdges.y.y)
-	// 		this.position.y = otherEdges.y.y + this.radius;	
-	// 	else if(this.velocity.y>0 && edges.y.y > otherEdges.y.x)
-	// 		this.position.y = otherEdges.y.x - this.radius;
-	// 	this.intPosition();	
-	// }
-
 	// whenever hit by a bullet
 	onBulletHit(damage){
 		this.stage.removeActor(this);
@@ -381,6 +372,7 @@ class Player extends Ball {
 		this.drawFacing(context, 'rgba(220,100,0,1)');
 	}
 
+	// interact with items in the vicinity of this
 	interact(){
 		for(var i=0;i<this.stage.actors.length;i++){
 			var actor = this.stage.actors[i];
@@ -390,6 +382,7 @@ class Player extends Ball {
 					actor.refill(this.weapon1);
 					actor.refill(this.weapon2);
 				}
+				// pick up health pack
 				else if(actor instanceof HealthPack){
 					this.health += 50;
 				}
@@ -409,6 +402,7 @@ class Player extends Ball {
 		this.weapon1.shoot();
 	}
 
+	// return the amunition info of player's weapons
 	getAmunitionInfo(){
 		var s =  this.weapon1.getAmunitionInfo();
 		if(this.weapon2 != null){
@@ -417,6 +411,7 @@ class Player extends Ball {
 		return s;
 	}
 
+	// switch weapon if the player has multiple
 	switchWeapon(){
 		if(this.weapon2 == null) return;
 		var temp = this.weapon1;
@@ -424,11 +419,13 @@ class Player extends Ball {
 		this.weapon2 = temp;
 	}
 
+	// return true iff actor is the vicinity of player
 	inVicinity(actor){
 		return this.collide(this.x-8,this.y-8,actor) || this.collide(this.x+8,this.y-8,actor) || 
 		this.collide(this.x-8,this.y+8,actor) || this.collide(this.x+8,this.y+8,actor)
 	}
 
+	// reload the player's primary weapon
 	reload(){
 		this.weapon1.reload();
 	}
@@ -438,6 +435,8 @@ class Player extends Ball {
 		this.health -= damage;
 		if(this.health <= 0){
 			this.stage.gameLost=true;
+			var msg = '<h1>You lose!</h1>Score: ';
+			document.getElementById('lose_msg').innerHTML = msg + this.stage.score;
 
 			$("#ui_play").hide();
 			$("#lose_msg").show();
@@ -447,6 +446,7 @@ class Player extends Ball {
 
 }
 
+// basic type of enemy
 class Enemy extends Ball{
 	constructor(stage, position, velocity, colour, radius, hp, range){
 		super(stage, position, velocity, colour, radius);
@@ -455,6 +455,8 @@ class Enemy extends Ball{
 		this.range = range;
 		this.cooldown = randint(100);
 	}
+
+	// fire a single bullet
 	fire(){
 		var hand = this.getOffset(25, this.facing);
 		var posision = new Pair(hand.x + this.x, hand.y + this.y);
@@ -479,6 +481,7 @@ class Enemy extends Ball{
 		super.step();
 	}
 
+	// goes to firing cooldown
 	resetCooldown(){
 		this.cooldown = 100;
 	}
@@ -508,6 +511,7 @@ class Enemy extends Ball{
 	}
 }
 
+// This enemy has a machine gun; fires rapidly but has long reload times
 class Gunner extends Enemy{
 	constructor(stage, position, velocity, colour, radius, hp, range){
 		super(stage, position, velocity, colour, radius, hp, range);
@@ -515,14 +519,7 @@ class Gunner extends Enemy{
 		this.loaded = 10;
 	}
 
-	fire(){
-		var hand = this.getOffset(25, this.facing);
-		var posision = new Pair(hand.x + this.x, hand.y + this.y);
-		var velocity = this.getOffset(15, this.facing);
-		var color = 'rgba(255, 0, 0, 1)';
-		stage.addActor(new Bullet(stage, posision, velocity, color, 4, 30, this.stage.params['opponentDamage'], 'enemy'));
-	}
-
+	// rapidly fires then goes to long cooldown
 	resetCooldown(){
 		this.loaded--;
 		this.cooldown = 3;
@@ -533,6 +530,8 @@ class Gunner extends Enemy{
 	}
 }
 
+// This enemy has a shield that absorbs damage; shield recharges overtime,
+// getting hit stops the shield regen.
 class Shielder extends Enemy{
 	constructor(stage, position, velocity, colour, radius, hp, range){
 		super(stage, position, velocity, colour, radius, hp, range);
@@ -541,6 +540,7 @@ class Shielder extends Enemy{
 		this.rechargeTime = 200;
 	}
 
+	// try to recharge every tick
 	step(){
 		this.recharge();
 		super.step();
@@ -558,7 +558,7 @@ class Shielder extends Enemy{
 		}
 	}
 
-	// draw this enemy and its gun
+	// draw this enemy and its gun, as well its shields!
 	draw(context){
 		if(this.shield > 0){
 			context.fillStyle = 'rgba(135, 186, 237, 1)';
@@ -584,6 +584,7 @@ class Shielder extends Enemy{
 	}
 }
 
+// Bullet fired by actors
 class Bullet extends Ball{
 	constructor(stage, position, velocity, colour, radius, hp, damage, from){
 		super(stage, position, velocity, colour, radius, hp);
@@ -629,6 +630,7 @@ class Bullet extends Ball{
 	}
 }
 
+// stationary interactable item
 class Item extends Ball{
 	constructor(stage, position, velocity, colour, radius, item){
 		super(stage, position, velocity, colour, radius);
@@ -643,6 +645,7 @@ class Item extends Ball{
 		return false;
 	}
 
+	// return the four edges of this
 	getEdges(x, y){
 		var leftEdge = Math.round(x);
 		var rightEdge = Math.round(x + this.radius);
@@ -658,18 +661,20 @@ class Item extends Ball{
 	}
 }
 
+// Interactable amunition box
 class Amunition extends Item{
 	constructor(stage, position, velocity, colour, radius){
 		super(stage, position, velocity, colour, radius);
 		this.colour='rgba('+45+','+82+','+45+','+1+')';
 	}
+	// gives weapon ammo
 	refill(weapon){
 		if(weapon == null) return;
 		if(weapon instanceof Pistol) weapon.amunition += 30;
 		else if(weapon instanceof Shotgun) weapon.amunition += 9;
 	}
 }
-
+// Interactable Health pack, gain health when picked up
 class HealthPack extends Item{
 	constructor(stage, position, velocity, colour, radius){
 		super(stage, position, velocity, colour, radius);
@@ -677,6 +682,7 @@ class HealthPack extends Item{
 	}
 }
 
+// general weapon class
 class Weapon{
 	constructor(stage, owner, magzine, amunition){
 		this.stage = stage;
@@ -696,7 +702,9 @@ class Weapon{
 		this.amunition -= consumed;
 	}
 
+	// fires a bullet
 	addBullet(hand){
+		this.stage.consumed_bullets++;
 		var posision = new Pair(hand.x + this.owner.x, hand.y + this.owner.y);
 		var velocity = this.owner.getOffset(20, this.owner.facing);
 		var color = 'rgba(255, 0, 0, 1)';
@@ -704,6 +712,7 @@ class Weapon{
 	}
 }
 
+// starting weapon, good range, lots of ammo
 class Pistol extends Weapon{
 	// fire this pistol
 	shoot(){
@@ -714,19 +723,20 @@ class Pistol extends Weapon{
 		this.loaded--;
 	}
 
+	// return the amunition info of this weapon
 	getAmunitionInfo(){
 		return "Pistol: " + this.loaded + '/' + this.amunition;
 	}
 }
 
+// limited range and ammp, but fires 3 small bullets at once
 class Shotgun extends Weapon{
-	constructor(stage, owner, magzine, amunition, durability){
+	constructor(stage, owner, magzine, amunition){
 		super(stage, owner, magzine, amunition);
-		this.durability = durability;
 		this.bulletLife = 8;
 	}
 
-	// fire a shotgun of three small loaded
+	// fire this shotgun for three small bullets
 	shoot(){
 		if(this.loaded <= 0)
 			return;
@@ -738,12 +748,9 @@ class Shotgun extends Weapon{
 			this.addBullet(hand);
 		}
 		this.loaded--;
-		this.durability--;
-		if(this.durability == 0){
-			this.break();
-		}
 	}
 
+	// return the amunition info of this weapon
 	getAmunitionInfo(){
 		return "Shotgun: " + this.loaded + '/' + this.amunition;
 	}
