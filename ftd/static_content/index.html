@@ -16,6 +16,7 @@
 			footer{position: fixed;bottom: 0;width: 100%;text-align: center;}
 			body{background-color:#eeeeee; margin-bottom:5%;}
 			button{color:#8F01F5;}
+			textarea{vertical-align:top;}
 		</style>
 		<title>Fortnite2d</title>
 	</head>
@@ -52,14 +53,62 @@
 					<button id="login" style="text-decoration:underline;border:none">Back to login</button>
 					<h1> Registration Form</h1>
 						<label for="user">Username* </label>           
-						<input id="user" name="user" minlength="6"> <br/>
+						<input id="user" name="user"> <br/>
 								
 						<label for="regis_password">Password*</label>
-						<input id="regis_password" name="regis_password" type="password" minlength="8"><br/>
+						<input id="regis_password" name="regis_password" type="password"><br/>
 								
 						<label for="again">Password Again*</label>
-						<input id="again" name="again" type="password" minlength="8"><br/>
-						<br/>
+						<input id="again" name="again" type="password"><br/>
+						<br/><br/><hr/>
+
+	<h2>Questionnaire</h2>
+		<h4>These questions are optional and can be found in your profile after login</h4> 
+	<label for="selectlist">Gender</label>
+	<select id="selectlist" name="selectlist", value=>
+	<option>I do not wish to answer</option>
+	<option>Female</option>
+	<option>Male</option>
+	<option>Other</option>
+	</select><br/>
+
+	<label for="date">Date of Birth</label>
+	<input id="date" name="date" type="date"></br> 
+
+	<label for="color">Favourite Color</label>
+	<input id="color" name="color" type="color"><br/>
+			
+	<fieldset>
+		<legend>Favourite Games</legend>
+		<input id="thischeck" name="checkboxlist"
+				type="checkbox" value="This">
+		<label for="thischeck">Guess Game</label>
+		<input id="orcheck" name="checkboxlist"
+				type="checkbox" value="And Or">
+		<label for="orcheck">Rock Paper Scissors</label>
+		<input id="thatcheck" name="checkboxlist"
+				type="checkbox" value="That">
+		<label for="thatcheck">Frog Puzzle</label>
+	</fieldset><br/>
+			
+	<fieldset>
+		<legend>Age group</legend>
+		<input id="thisradio" name="radiobutton"
+				type="radio" value="This" checked>
+		<label for="thisradio">0-20</label>
+		<input id="orradio" name="radiobutton"
+				type="radio" value="Or">
+		<label for="orradio">21-40</label>
+		<input id="thatradio" name="radiobutton"
+				type="radio" value="That">
+		<label for="thatradio">40 or higher</label>
+	</fieldset><br/>
+			
+	<label>Self Introduction
+	<textarea id="intro" name="intro" cols="40" rows="10" 
+	placeholder="Introduce Yourself~"> </textarea> </label><br/><br/>
+				
+						
 						<input type='submit' id='registerSubmit' name="register" value="Sign Up!"/>
 						<div id="prompt"></div>
 				</div>
@@ -69,7 +118,7 @@
 					<h1>f0rt9it32d </h1>
 						<input type="text" id="username" placeholder="User Name" />
 						<input type="password" id="password" placeholder="Password" />
-						<input type="submit" id="loginSubmit" value="Login">
+						<input type="submit" id="loginSubmit" value="Start Game!">
 						<div id='prom'></div>
 						<br/><br/>
 						<button id="register" style="border:none;text-decoration:underline">Register</button>
