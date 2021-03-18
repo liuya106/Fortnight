@@ -122,6 +122,38 @@ function instruction(){
         $('#nav,#instr').show();
 }
 
+function registered(){
+        if ($("#user").val() == ''){
+                $("#prompt").html('Username cannot be empty!');
+        }else if($("#regis_password").val() == ''){
+                $("#prompt").html('Password cannot be empty!');
+        }else if ($("#regis_password").val() != $("#again").val()){
+                $("#prompt").html('Please make sure passwords match!');
+        }else{
+                $("#prompt").html('');
+
+                credentials =  { 
+                        "username": $("#user").val(), 
+                        "password": $("#regis_password").val() 
+                };
+
+                $.ajax({
+                        method: "POST",
+                        url: "/api/auth/register",
+                        data: JSON.stringify({}),
+                        headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+                        processData:false,
+                        contentType: "application/json; charset=utf-8",
+                        dataType:"json"
+                }).done(function(data, text_status, jqXHR){
+                        console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+                        login();
+                }).fail(function(err){
+                        console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+                });
+        }
+}
+
 function registration(){
         $("#login").on('click', function(){login();});
 
@@ -129,6 +161,8 @@ function registration(){
                 $(this).hide();
         })
         $("#registration").show();
+
+        $("#registerSubmit").on('click', function(){registered();});
 }
 
 
@@ -157,35 +191,36 @@ function play(){
 }
 
 function loggedin(){
-        clearInterval(interval);
-        setupGame();
-        startGame();
-        play();
+        if ($("#username").val() == ''){
+                $("#prom").html('Username cant be empty!');
+        }else if($("#password").val() == ''){
+                $("#prom").html('Password cant be empty!');
+        }else{
+                $("#prom").html('');
+                credentials =  { 
+                        "username": $("#username").val(), 
+                        "password": $("#password").val() 
+                };
 
-	// credentials =  { 
-	// 	"username": $("#username").val(), 
-	// 	"password": $("#password").val() 
-	// };
-
-        // $.ajax({
-        //         method: "POST",
-        //         url: "/api/auth/login",
-        //         data: JSON.stringify({}),
-	// 	headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-        //         processData:false,
-        //         contentType: "application/json; charset=utf-8",
-        //         dataType:"json"
-        // }).done(function(data, text_status, jqXHR){
-        //         console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-
-        // 	// $("#ui_login").hide();
-        // 	// $("#ui_play").show();
-
-                
-
-        // }).fail(function(err){
-        //         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        // });
+                $.ajax({
+                        method: "POST",
+                        url: "/api/auth/login",
+                        data: JSON.stringify({}),
+                        headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+                        processData:false,
+                        contentType: "application/json; charset=utf-8",
+                        dataType:"json"
+                }).done(function(data, text_status, jqXHR){
+                        console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+                        clearInterval(interval);
+                        setupGame();
+                        startGame();
+                        play();
+                }).fail(function(err){
+                        console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+                        $('#prom').html('username and password don"t match!');
+                });
+        }
 }
 
 

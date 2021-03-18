@@ -30,6 +30,38 @@ app.post('/api/test', function (req, res) {
 	res.json({"message":"got here"}); 
 });
 
+
+app.post('/api/auth/register', function (req, res) {
+	if (!req.headers.authorization) {
+		return res.status(403).json({ error: 'No credentials sent!' });
+  	}
+	try {
+		// var credentialsString = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString();
+		var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
+
+		var user_pass = Buffer.from(m[1], 'base64').toString()
+		m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
+
+		var username = m[1];
+		var password = m[2];
+
+		console.log(username+" "+password);
+
+		let sql = 'INSERT INTO ftduser (username, password) VALUES ($1, sha512($2))';
+        	pool.query(sql, [username, password], (err, pgRes) => {
+  			if (err){
+                		res.status(403).json({ error: 'Insert failure'});
+			} else if(pgRes.rowCount == 1){
+				res.status(200);
+			} else {
+                		res.status(403).json({ error: 'Unknown failure'});
+        		}
+		});
+	} catch(err) {
+               	res.status(403).json({ error: 'Not authorized'});
+	}
+});
+
 /** 
  * This is middleware to restrict access to subroutes of /api/auth/ 
  * To get past this middleware, all requests should be sent with appropriate

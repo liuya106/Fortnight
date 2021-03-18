@@ -50,18 +50,17 @@
 				<div id="registration" class='ui'>
 					<button id="login" style="text-decoration:underline;border:none">Back to login</button>
 					<h1> Registration Form</h1>
-					<form method="get">
 						<label for="user">Username* </label>           
 						<input id="user" name="user" minlength="6"> <br/>
 								
 						<label for="regis_password">Password*</label>
-						<input id="regis_password" name="password" type="password" minlength="8"><br/>
+						<input id="regis_password" name="regis_password" type="password" minlength="8"><br/>
 								
 						<label for="again">Password Again*</label>
 						<input id="again" name="again" type="password" minlength="8"><br/>
 						<br/>
-						<button type="submit" name="register" value="registered">Sign up</button>
-					</form>
+						<input type='submit' id='registerSubmit' name="register" value="Sign Up!"/>
+						<div id="prompt"></div>
 				</div>
 				
 
@@ -70,6 +69,7 @@
 						<input type="text" id="username" placeholder="User Name" />
 						<input type="password" id="password" placeholder="Password" />
 						<input type="submit" id="loginSubmit" value="Login">
+						<div id='prom'></div>
 						<br/><br/>
 						<button id="register" style="border:none;text-decoration:underline">Register</button>
 				</div>
