@@ -133,34 +133,51 @@ app.get('/api/auth/statistics', function (req, res) {
 	});
 });
 
-app.get('/api/auth/statistics', function (req, res) {
-	let sql = 'SELECT * FROM ftduser';
-	pool.query(sql, [], (err, pgRes) => {
-		if (err){
-			res.status(403).json({ error: 'query error'});
-		} else {
-			res.json(pgRes.rows);
-			res.status(200);
-		}
-	});
-});
-
 app.delete('/api/auth/delete', function (req, res) {
-
 	var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
-
 	var user_pass = Buffer.from(m[1], 'base64').toString()
 	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
-
 	var username = m[1];
 	// var password = m[2];
-
 	let sql = 'DELETE FROM ftduser WHERE username=$1';
 	pool.query(sql, [username], (err, pgRes) => {
 		if (err){
 			res.status(403).json({ error: 'query error'});
 		} else {
 			res.json({"message":"delete success!"});
+			res.status(200);
+		}
+	});
+});
+
+app.put('/api/auth/update', function (req, res) {
+	var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
+	var user_pass = Buffer.from(m[1], 'base64').toString()
+	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
+	var username = m[1];
+	var score = m[2];
+	let sql = 'UPDATE stats SET kill=kill+$1 WHERE username=$2';
+	pool.query(sql, [score,username], (err, pgRes) => {
+		if (err){
+			res.status(403).json({ error: 'query error'});
+		} else {
+			res.json({"message":"update success!"});
+			res.status(200);
+		}
+	});
+});
+
+app.get('/api/auth/update', function (req, res) {
+	var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
+	var user_pass = Buffer.from(m[1], 'base64').toString()
+	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
+	var username = m[1];
+	let sql = 'SELECT kill FROM stats WHERE username=$1';
+	pool.query(sql, [username], (err, pgRes) => {
+		if (err){
+			res.status(403).json({ error: 'query error'});
+		} else {
+			res.json(psRes);
 			res.status(200);
 		}
 	});

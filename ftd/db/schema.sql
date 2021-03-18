@@ -8,15 +8,16 @@ CREATE TABLE ftduser (
 
 
 CREATE TABLE profile (
-	username VARCHAR(20) FOREIGN KEY,
-	birthday date,
-	
+	username VARCHAR(20) FOREIGN KEY NOT NULL,
+	name VARCHAR(30),
+	gender VARCHAR(10)
 )
 
 CREATE TABLE stats(
-	kill INT,
-	death INT,
-	consumed_bullets INT,
+	username VARCHAR(20) FOREIGN KEY NOT NULL,
+	kill INT DEFAULT 0,
+	death INT DEFAULT 0,
+	consumed_bullets INT DEFAULT 0
 )
 --- Could have also stored as 128 character hex encoded values
 --- select char_length(encode(sha512('abc'), 'hex')); --- returns 128
