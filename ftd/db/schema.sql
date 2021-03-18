@@ -9,15 +9,14 @@ CREATE TABLE ftduser (
 
 CREATE TABLE profile (
 	username VARCHAR(20) FOREIGN KEY,
-	
 	birthday date,
 	
 )
 
 CREATE TABLE stats(
-	kill_count INT,
-	consumed_bullet INT,
-	difficulty VARCHAR(10)
+	kill INT,
+	death INT,
+	consumed_bullets INT,
 )
 --- Could have also stored as 128 character hex encoded values
 --- select char_length(encode(sha512('abc'), 'hex')); --- returns 128

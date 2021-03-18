@@ -45,7 +45,8 @@ function clearGame(){
 	document.removeEventListener('keydown', moveByKey);
         stage.canvas.removeEventListener('mousemove', mouseMove);
         stage.canvas.removeEventListener('mousedown', mouseFire);
-        pauseGame();
+        clearInterval(interval);
+        interval=null;
         start = null;
         remaining = null;
 }
@@ -94,11 +95,7 @@ function registered(e){
         if(!$("#form")[0].checkValidity()) return;
         e.preventDefault();
 
-        if ($("#user").val() == ''){
-                $("#prompt").html('Username cannot be empty!');
-        }else if($("#regis_password").val() == ''){
-                $("#prompt").html('Password cannot be empty!');
-        }else if ($("#regis_password").val() != $("#again").val()){
+        if ($("#regis_password").val() != $("#again").val()){
                 $("#prompt").html('Please make sure passwords match!');
         }else{
                 $("#prompt").html('');
@@ -110,7 +107,7 @@ function registered(e){
 
                 $.ajax({
                         method: "POST",
-                        url: "/api/auth/register",
+                        url: "/api/register",
                         data: JSON.stringify({}),
                         headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
                         processData:false,
@@ -194,6 +191,13 @@ function login(){
         $('#ui_login').show();
 }
 
+function profile(){
+        $('div[class="ui"]').not('#profile,#nav').each(function(){
+                $(this).hide();
+        });
+        $('#profile,#nav').show();
+}
+
 // Using the /api/auth/test route, must send authorization header
 function test(){
         $.ajax({
@@ -209,8 +213,51 @@ function test(){
         });
 }
 
+
+function retrievePlayers(){
+        $.ajax({
+                method: "GET",
+                url: "/api/auth/statistics",
+                processData:false,
+                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+                contentType: "application/json; charset=utf-8",
+                dataType:"json"
+        }).done(function(data, text_status, jqXHR){
+                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+                var stats="";
+                for (var player in data){
+                        stats += "<br/>"+ player +" "+data[player]; 
+                }
+                $("#statistics").html(stats);
+        }).fail(function(err){
+                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+        });
+}
+
+function deletePlayer(){
+        $.ajax({
+                method: "DELETE",
+                url: "/api/auth/delete",
+                processData:false,
+                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+                contentType: "application/json; charset=utf-8",
+                dataType:"json"
+        }).done(function(data, text_status, jqXHR){
+                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+                var stats="";
+                for (var player in data){
+                        stats += "<br/>"+ player +" "+data[player]; 
+                }
+                $("#statistics").html(stats);
+        }).fail(function(err){
+                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+        });
+}
+
 $(function(){
         // Setup all events here and display the appropriate UI
+        $('#delete').on('click', function(){clearGame(); deletePlayer(); login();});
+        $('#profile').on('click', function(){pauseGame(); profile();});
         $("#loginSubmit").on('click',function(){ loggedin(); });
         $("#register").on('click', function(){ registration(); });
         $("#login").on('click', function(){login();});
@@ -218,6 +265,7 @@ $(function(){
         $("#logout").on('click', function(){ clearGame(); login();} );
         $("#instruction").on('click', function(){ pauseGame(); instruction();});
         $("#play").on('click', function(){ play();});
+        $('#stats').on('click', function(){pauseGame();retrievePlayers();});
         login();
 });
 

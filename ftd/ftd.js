@@ -30,8 +30,9 @@ app.post('/api/test', function (req, res) {
 	res.json({"message":"got here"}); 
 });
 
-
-app.post('/api/auth/register', function (req, res) {
+//Restful API-registration: insert new accounts into database
+//This one dont need credential
+app.post('/api/register', function (req, res) {
 	if (!req.headers.authorization) {
 		return res.status(403).json({ error: 'No credentials sent!' });
   	}
@@ -50,15 +51,15 @@ app.post('/api/auth/register', function (req, res) {
 		let sql = 'SELECT * FROM ftduser WHERE username=$1';
 		pool.query(sql, [username], (err, pgRes) => {
 			if (err){
-					  res.status(403).json({ error: 'query failure'});
+				res.status(403).json({ error: 'query failure'});
 		  	} else if (pgRes.rowCount!=0) {
-			  res.status(400);
-			  res.json({"insert failure":"username already exist"}); 
+			  	res.status(400);
+			  	res.json({"insert failure":"username already exist"}); 
 			}else{
 				let sql = 'INSERT INTO ftduser (username, password) VALUES ($1, sha512($2))';
 				pool.query(sql, [username, password], (err, pgRes) => {
 				if (err){
-							res.status(403).json({ error: 'Insert failure'});
+					res.status(403).json({ error: 'Insert failure'});
 				} else {
 					res.status(200);
 					res.json({"message":"registration success"}); 
@@ -66,11 +67,13 @@ app.post('/api/auth/register', function (req, res) {
 				});
 			}
 	  	});
-
 	} catch(err) {
                	res.status(403).json({ error: 'Not registered'});
 	}
 });
+
+
+
 
 /** 
  * This is middleware to restrict access to subroutes of /api/auth/ 
@@ -99,23 +102,70 @@ app.use('/api/auth', function (req, res,next) {
 		let sql = 'SELECT * FROM ftduser WHERE username=$1 and password=sha512($2)';
         	pool.query(sql, [username, password], (err, pgRes) => {
   			if (err){
-                		res.status(403).json({ error: 'Not authorized'});
+                res.status(403).json({ error: 'Not authorized'});
 			} else if(pgRes.rowCount == 1){
 				next(); 
 			} else {
-                		res.status(403).json({ error: 'Not authorized'});
-        		}
+                res.status(403).json({ error: 'Not authorized'});
+        	}
 		});
 	} catch(err) {
                	res.status(403).json({ error: 'Not authorized'});
 	}
 });
 
+
 // All routes below /api/auth require credentials 
 app.post('/api/auth/login', function (req, res) {
 	res.status(200); 
 	res.json({"message":"authentication success"}); 
 });
+
+app.get('/api/auth/statistics', function (req, res) {
+	let sql = 'SELECT * FROM ftduser';
+	pool.query(sql, [], (err, pgRes) => {
+		if (err){
+			res.status(403).json({ error: 'query error'});
+		} else {
+			res.json(pgRes.rows);
+			res.status(200);
+		}
+	});
+});
+
+app.get('/api/auth/statistics', function (req, res) {
+	let sql = 'SELECT * FROM ftduser';
+	pool.query(sql, [], (err, pgRes) => {
+		if (err){
+			res.status(403).json({ error: 'query error'});
+		} else {
+			res.json(pgRes.rows);
+			res.status(200);
+		}
+	});
+});
+
+app.delete('/api/auth/delete', function (req, res) {
+
+	var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
+
+	var user_pass = Buffer.from(m[1], 'base64').toString()
+	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
+
+	var username = m[1];
+	// var password = m[2];
+
+	let sql = 'DELETE FROM ftduser WHERE username=$1';
+	pool.query(sql, [username], (err, pgRes) => {
+		if (err){
+			res.status(403).json({ error: 'query error'});
+		} else {
+			res.json({"message":"delete success!"});
+			res.status(200);
+		}
+	});
+});
+
 
 app.post('/api/auth/test', function (req, res) {
 	res.status(200); 
