@@ -10,8 +10,8 @@
 			#ui_login { display:block; }
 			#ui_play { display:none; }
 			#navigation {display:flex;justify-content:space-between;}
-			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;width:50%;padding:0px;}
-			#navigation button{border:none;background-color: #0190F5;color:white;margin:5px;padding: 15px;text-align: center;width:500px;}
+			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;padding:0px;}
+			#navigation button{border:none;background-color: #0190F5;color:white;margin:2px;padding:15px;text-align: center;}
 			#navigation button:hover{background-color:black;color:white;}
 			footer{position: fixed;bottom: 0;width: 100%;text-align: center;}
 			body{background-color:#eeeeee; margin-bottom:5%;}
@@ -21,78 +21,87 @@
 	</head>
 	<body bgcolor="ffffff">
 		<main>
-			<nav id="navigation">
-				<h1>f0rt9it32d </h1>
-				<ul>
-					<button id="play">Play</button>
-					<button id="instruction">Instruction</button>
-					<button id="stats">Stats</button>
-					<button id="profile">Profile</button>
-					<button id="logout">Logout</button>
-				</ul>
-			</nav>
-
-
-			<div id="instr">
-				<h1> Instruction </h1>
-				<p>Welcome to f0rt9it32d! This is a brief Keybind instruction</p>
-				<p>W: move forwards</p>
-				<p>A: move leftwards</p>
-				<p>S: move backwards</p>
-				<p>D: move rightwards</p>
-				<p>H: hold position</p>
-				<p>LMB: Shoot</p>
-				<p>E: come close to the ammunition box and press E to resupply</p>
-			</div>
-
-			<div id="registration">
-				<button id="login" style="text-decoration:underline;border:none">Back to login</button>
-				<h1> Registration Form</h1>
-				<form method="get">
-				<label for="user">Username* </label>           
-				<input id="user" name="user" minlength="6" required> <br/>
-						
-				<label for="password">Password*</label>
-				<input id="password" name="password" type="password" minlength="8" required><br/>
-						
-				<label for="again">Password Again*</label>
-				<input id="again" name="again" type="password" minlength="8" required><br/>
-				<br/><br/>
-				<button type="submit" name="register" value="registered">Sign up</button><br/><br/>
-			</div>
-			
-
-			<div id="ui_login">
-				<h1>f0rt9it32d </h1>
-				<div>
-					<input type="text" id="username" placeholder="User Name" />
-					<input type="password" id="password" placeholder="Password" />
-					<input type="submit" id="loginSubmit" value="Login">
-					<br/><br/>
-					<button id="register" style="border:none;text-decoration:underline">Register</button>
+				<div id='nav' class='ui'>
+				<nav id="navigation">
+					<h1>f0rt9it32d </h1>
+					<ul>
+						<button id="play">Play</button>
+						<button id="instruction">Instruction</button>
+						<button id="stats">Stats</button>
+						<button id="profile">Profile</button>
+						<button id="logout">Logout</button>
+					</ul>
+				</nav>
 				</div>
-			</div>
 			
-			<div id="ui_play">
-				<div id="player_coords">
+				<div id="instr" class='ui'>
+					<h1> Instruction </h1>
+					<p>Welcome to f0rt9it32d! This is a brief Keybind instruction</p>
+					<p>W: move forwards</p>
+					<p>A: move leftwards</p>
+					<p>S: move backwards</p>
+					<p>D: move rightwards</p>
+					<p>H: hold position</p>
+					<p>R: reload</p>
+					<p>LMB: Shoot</p>
+					<p>E: come close to the ammunition box and press E to resupply</p>
+				</div>
+
+				<div id="registration" class='ui'>
+					<button id="login" style="text-decoration:underline;border:none">Back to login</button>
+					<h1> Registration Form</h1>
+					<form method="get">
+						<label for="user">Username* </label>           
+						<input id="user" name="user" minlength="6"> <br/>
+								
+						<label for="regis_password">Password*</label>
+						<input id="regis_password" name="password" type="password" minlength="8"><br/>
+								
+						<label for="again">Password Again*</label>
+						<input id="again" name="again" type="password" minlength="8"><br/>
+						<br/>
+						<button type="submit" name="register" value="registered">Sign up</button>
+					</form>
+				</div>
 				
+
+				<div id="ui_login" class='ui'>
+					<h1>f0rt9it32d </h1>
+						<input type="text" id="username" placeholder="User Name" />
+						<input type="password" id="password" placeholder="Password" />
+						<input type="submit" id="loginSubmit" value="Login">
+						<br/><br/>
+						<button id="register" style="border:none;text-decoration:underline">Register</button>
 				</div>
-				<div id="mouse_coords">
+				
+
+				<div id="ui_play" class='ui'>
+					<div id="player_coords">
 					
+					</div>
+					<div id="mouse_coords">
+						
+					</div>
+					<div id="temp">
+						
+					</div>
+					<div id="player_info">
+						Health: 100        Amunition: 24        Score: 0
+					</div>
+					<center>
+						<canvas id="stage" width="800" height="800" style="border:1px solid black;"> </canvas>
+					</center>
+
+
 				</div>
-				<div id="temp">
-					
+
+				<div id="lose_msg" class='ui'>
+					<h1>You lose!</h1>
 				</div>
-				<div id="player_info">
-					Health: 100        Amunition: 24        Score: 0
-				</div>
-				<center>
-					<canvas id="stage" width="800" height="800" style="border:1px solid black;"> </canvas>
-				</center>
-			</div>
-			<div id="lose_msg">
-				<h1>You lose!</h1>
-			</div>
+
+				
+
+			
 		</main>
 
 		<footer>

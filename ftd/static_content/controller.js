@@ -22,7 +22,7 @@ function startGame(){
                 start = new Date();},50);
 }
 function pauseGame(){
-        remaining = 50 - (new Date() - start)%50;
+        if (start!=null) remaining = 50 - (new Date() - start)%50;
 	clearInterval(interval);
 	interval=null;
 }
@@ -116,46 +116,44 @@ function mouseMove(event){
 
 
 function instruction(){
-        pauseGame();
-        $("#ui_login").hide();
-        $("#ui_play").hide();
-        $("#lose_msg").hide();
-        $("#registration").hide();
-        $("#navigation").show();
-        $("#instr").show();  
-}
-
-
-
-function login(){
-        $("#ui_login").show();
-        $("#ui_play").hide();
-        $("#lose_msg").hide();
-        $("#navigation").hide();
-        $("#instr").hide();
-        $("#registration").hide();
-        $("#loginSubmit").on('click',function(){ loggedin(); });
-        $("#register").on('click', function(){ registration(); });
+        $('div[class="ui"]').not('#nav,#instr').each(function(){
+                $(this).hide();
+        })
+        $('#nav,#instr').show();
 }
 
 function registration(){
         $("#login").on('click', function(){login();});
-        $("#ui_login").hide();
-        $("#ui_play").hide();
-        $("#lose_msg").hide();
-        $("#navigation").hide();
-        $("#instr").hide();
+
+        $('div[class="ui"]').not('#registration').each(function(){
+                $(this).hide();
+        })
         $("#registration").show();
 }
 
+
 function play(){
+        $("#logout").on('click', function(){ clearGame(); login();} );
+        $("#instruction").on('click', function(){ pauseGame(); instruction();});
+        $("#play").on('click', function(){
+                if (stage.gameLost) {$("#lose_msg").hide();loggedin();}
+                else play();
+        });
+
+
+        $('div[class="ui"]').not('#nav,#ui_play,#lose_msg').each(function(){
+                $(this).hide();
+        })
         if (remaining != null) resumeGame();
-        $("#ui_login").hide();
-        $("#navigation").show();
-        if(stage.gameLost) $("#lose_msg").show();
-        else $("#ui_play").show();
-        $("#instr").hide();
-        $("#logout").on('click', function(){ login() });
+        if(stage.gameLost) {
+                $("#lose_msg, #nav").show();
+                $("#ui_play").hide();
+                clearGame();
+        }else {
+                $("#ui_play,#nav").show();
+                $("#lose_msg").hide();
+        }       
+
 }
 
 function loggedin(){
@@ -163,13 +161,6 @@ function loggedin(){
         setupGame();
         startGame();
         play();
-
-        $("#instruction").on('click', function(){instruction();})
-        $("#play").on('click', function(){play();})
-
-        // $("#instruction").on('mouseover', function(){
-        //         $("#instruction").css("color:#1e81b0")
-        // })
 
 	// credentials =  { 
 	// 	"username": $("#username").val(), 
@@ -187,15 +178,25 @@ function loggedin(){
         // }).done(function(data, text_status, jqXHR){
         //         console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
 
-        // 	$("#ui_login").hide();
-        // 	$("#ui_play").show();
+        // 	// $("#ui_login").hide();
+        // 	// $("#ui_play").show();
 
-	// 	setupGame();
-	// 	startGame();
+                
 
         // }).fail(function(err){
         //         console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
         // });
+}
+
+
+function login(){
+        $("#loginSubmit").on('click',function(){ loggedin(); });
+        $("#register").on('click', function(){ registration(); });
+
+        $('div[class="ui"]').not('#ui_login').each(function(){
+                $(this).hide();
+        });
+        $('#ui_login').show();
 }
 
 // Using the /api/auth/test route, must send authorization header
