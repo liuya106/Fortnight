@@ -9,7 +9,7 @@
 		<style>
 			#ui_login { display:block; }
 			#ui_play { display:none; }
-			#navigation {display:flex;justify-content:space-between;}
+			#navigation {display:inline-flex;justify-content:space-between;}
 			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;padding:0px;}
 			#navigation button{border:none;background-color: #0190F5;color:white;margin:2px;padding:15px;text-align: center;}
 			#navigation button:hover{background-color:black;color:white;}
@@ -22,45 +22,47 @@
 	</head>
 	<body bgcolor="ffffff">
 		<main>
-				<div id='nav' class='ui'>
-				<nav id="navigation">
-					<img src='logo.jpg' alt='logo' width='300' height='100'>
-					<!-- <h1>f0rt9it32d </h1> -->
-					<ul>
-						<button id="play">Play</button>
-						<button id="instruction">Instruction</button>
-						<button id="stats">Stats</button>
-						<button id="profile">Profile</button>
-						<button id="logout">Logout</button>
-					</ul>
-				</nav>
-				</div>
+			<div id='nav' class='ui'>
+			<nav id="navigation">
+				<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'>
+				<ul>
+					<button id="play">Play</button>
+					<button id="instruction">Instruction</button>
+					<button id="stats">Stats</button>
+					<button id="profile">Profile</button>
+					<button id="logout">Logout</button>
+				</ul>
+			</nav>
+			</div>
 			
-				<div id="instr" class='ui'>
-					<h1> Instruction </h1>
-					<p>Welcome to f0rt9it32d! This is a brief Keybind instruction</p>
-					<p>W: move forwards</p>
-					<p>A: move leftwards</p>
-					<p>S: move backwards</p>
-					<p>D: move rightwards</p>
-					<p>H: hold position</p>
-					<p>R: reload</p>
-					<p>LMB: Shoot</p>
-					<p>E: come close to the ammunition box and press E to resupply</p>
-				</div>
+			<div id="instr" class='ui'>
+				<h1> Instruction </h1>
+				<p>Welcome to f0rt9it32d! This is a brief Keybind instruction</p>
+				<p>W: move forwards</p>
+				<p>A: move leftwards</p>
+				<p>S: move backwards</p>
+				<p>D: move rightwards</p>
+				<p>H: hold position</p>
+				<p>R: reload</p>
+				<p>LMB: Shoot</p>
+				<p>E: interact</p>
+				<p>Q: switch weapon</p>
+			</div>
 
-				<div id="registration" class='ui'>
-					<button id="login" style="text-decoration:underline;border:none">Back to login</button>
-					<h1> Registration Form</h1>
-						<label for="user">Username* </label>           
-						<input id="user" name="user"> <br/>
-								
-						<label for="regis_password">Password*</label>
-						<input id="regis_password" name="regis_password" type="password"><br/>
-								
-						<label for="again">Password Again*</label>
-						<input id="again" name="again" type="password"><br/>
-						<br/><br/><hr/>
+			<div id="registration" class='ui'>
+				<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'>
+				<button id="login" style="text-decoration:underline;border:none">Back to login</button>
+				<form id='form' method="post">
+				<h1> Registration Form</h1>
+					<label for="user">Username* </label>           
+					<input id="user" name="user" required> <br/>
+							
+					<label for="regis_password">Password*</label>
+					<input id="regis_password" name="regis_password" type="password" required><br/>
+							
+					<label for="again">Password Again*</label>
+					<input id="again" name="again" type="password" required><br/>
+					<br/><br/><hr/>
 
 	<h2>Questionnaire</h2>
 		<h4>These questions are optional and can be found in your profile after login</h4> 
@@ -105,17 +107,20 @@
 	</fieldset><br/>
 			
 	<label>Self Introduction
-	<textarea id="intro" name="intro" cols="40" rows="10" 
+	<textarea id="intro" name="intro" cols="60" rows="8" 
 	placeholder="Introduce Yourself~"> </textarea> </label><br/><br/>
 				
 						
-						<input type='submit' id='registerSubmit' name="register" value="Sign Up!"/>
-						<div id="prompt"></div>
-				</div>
+	<button type='submit' id='registerSubmit' name="register" value="Sign Up!">h</button>
+	<div id="prompt"></div>
+	</form>
+
+	</div>
 				
 
 				<div id="ui_login" class='ui'>
-					<h1>f0rt9it32d </h1>
+					<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'>
+					<h1>Login</h1>
 						<input type="text" id="username" placeholder="User Name" />
 						<input type="password" id="password" placeholder="Password" />
 						<input type="submit" id="loginSubmit" value="Start Game!">
