@@ -280,11 +280,13 @@ function getScore(score){
                 method: "GET",
                 url: "/api/auth/update",
                 processData:false,
-                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.username) },
+                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + score) },
                 contentType: "application/json; charset=utf-8",
                 dataType:"json"
         }).done(function(data, text_status, jqXHR){
                 console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+                
+
         }).fail(function(err){
                 console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
         });
