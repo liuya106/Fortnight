@@ -360,7 +360,7 @@ class Player extends Ball {
 	constructor(stage, position, velocity, colour, radius, hp){
 		super(stage, position, velocity, colour, radius);
 		// this.health = hp;
-		this.health = hp*10;
+		this.health = hp;
 		this.damage = stage.params['playerDamage'];
 		this.weapon1 = new Pistol(this.stage, this, 15, 45);
 		this.weapon2 = null;

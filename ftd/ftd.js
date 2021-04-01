@@ -101,7 +101,7 @@ app.use('/api/auth', function (req, res,next) {
 
 		let sql = 'SELECT * FROM ftduser WHERE username=$1 and password=sha512($2)';
         	pool.query(sql, [username, password], (err, pgRes) => {
-  			if (err){
+			if (err){
                 res.status(401).json({ error: 'Not authorized'});
 			} else if(pgRes.rowCount == 1){
 				next(); 
@@ -122,7 +122,10 @@ app.post('/api/auth/login', function (req, res) {
 });
 
 app.get('/api/auth/statistics', function (req, res) {
-	let sql = 'SELECT * FROM ftduser';
+	var m = /^Basic\s+(.*)$/.exec(req.headers.authorization);
+	var user_pass = Buffer.from(m[1], 'base64').toString()
+	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
+	let sql = 'SELECT username, kill FROM stats ORDER BY kill DESC';
 	pool.query(sql, [], (err, pgRes) => {
 		if (err){
 			res.status(401).json({ error: 'query error'});
@@ -142,7 +145,7 @@ app.delete('/api/auth/delete', function (req, res) {
 	let sql = 'DELETE FROM ftduser WHERE username=$1';
 	pool.query(sql, [username], (err, pgRes) => {
 		if (err){
-			res.status(401).json({ error: 'query error'});
+			res.status(404).json({ error: 'user not found error'});
 		} else {
 			res.json({"message":"delete success!"});
 			res.status(200);
@@ -155,9 +158,10 @@ app.put('/api/auth/update', function (req, res) {
 	var user_pass = Buffer.from(m[1], 'base64').toString()
 	m = /^(.*):(.*)$/.exec(user_pass); // probably should do better than this
 	var username = m[1];
-	var score = m[2];
+	var score = JSON.parse(req.body['score']);
 	let sql = 'UPDATE stats SET kill=kill+$1 WHERE username=$2';
 	pool.query(sql, [score,username], (err, pgRes) => {
+		console.log(score);
 		if (err){
 			res.status(401).json({ error: 'query error'});
 		} else {
