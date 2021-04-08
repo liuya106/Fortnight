@@ -1,322 +1,244 @@
-var stage=null;
 var view = null;
-var interval=null;
 var credentials={ "username": "", "password":"" };
-var start = null;
-var remaining = null;
-function setupGame(){
-	stage=new Stage(document.getElementById('stage'), 'hard');
-	// https://javascript.info/keyboard-events
-	document.addEventListener('keydown', moveByKey);
-        stage.canvas.addEventListener('mousemove', mouseMove);
-        stage.canvas.addEventListener('mousedown', mouseFire);
-        // var ctx = stage.canvas.getContext("2d");
-        // ctx.font = "30px Arial";
-        // ctx.fillText("Hello World", 10, 50);
-}
-function startGame(){
-	interval=setInterval(function(){ 
-                if(stage.gameLost) {
-                        clearGame();
-                }
-                else{
-                        stage.step(); stage.draw(); }
-                start = new Date();},50);
-}
-function pauseGame(){
-        if (start!=null) remaining = 50 - (new Date() - start)%50;
-	clearInterval(interval);
-	interval=null;
-}
+var canvas = null;
 
-function resumeGame(){
-        setTimeout(function(){ 
-                if(stage.gameLost) clearGame();
-                else{stage.step(); stage.draw();}
-                start = new Date();}, remaining);
-        interval=setInterval(function(){ 
-                if(stage.gameLost) clearGame();
-                else{
-                        stage.step(); stage.draw(); }
-                start = new Date();},50);
-        remaining = null;
-}
-
-function clearGame(){
-        stage.removePlayer(stage.player);
-	document.removeEventListener('keydown', moveByKey);
-        stage.canvas.removeEventListener('mousemove', mouseMove);
-        stage.canvas.removeEventListener('mousedown', mouseFire);
-        clearInterval(interval);
-        interval=null;
-        start = null;
-        remaining = null;
-}
-function moveByKey(event){
-	var key = event.key.toLowerCase();
-	var moveMap = { 
-		'a': new Pair(-8,0),
-		's': new Pair(0,8),
-		'd': new Pair(8,0),
-		'w': new Pair(0,-8),
-                'h': new Pair(0, 0)
-	};
-	if(key in moveMap){
-		stage.player.velocity=moveMap[key];
-	} else if(key == 'e'){
-                stage.player.interact();
-        } else if(key == 'r')
-                stage.player.reload();
-        else if(key == 'q')
-                stage.player.switchWeapon();
-}
-
-// LMB to fire
-function mouseFire(){
-        stage.player.fire();
-}
-
-// player turret follows mouse
-function mouseMove(event){
-        // get the position of mouse
-        var offset = stage.getTranslation();
-        var px = event.offsetX - offset.x;
-        var py = event.offsetY - offset.y;
-
-        stage.player.face(px, py);
-}
-
-function instruction(){
-        $('div[class="ui"]').not('#nav,#instr').each(function(){
-                $(this).hide();
-        })
-        $('nav button').not('#instruction').each(function(){
-                $(this).css({'background-color':'#0190F5', 'color':'white'});
-        })
-        $('#nav,#instr').show();
-        $('#instruction').css({'background-color':'grey', 'color':'black'});
-}
-
-function registered(e){
-        if(!$("#form")[0].checkValidity()) return;
-        e.preventDefault();
-
-        if ($("#regis_password").val() != $("#again").val()){
-                $("#prompt").html('Please make sure passwords match!');
-        }else{
-                $("#prompt").html('');
-
-                credentials =  { 
-                        "username": $("#user").val(), 
-                        "password": $("#regis_password").val() 
-                };
-
-                $.ajax({
-                        method: "POST",
-                        url: "/api/register",
-                        data: JSON.stringify({}),
-                        headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                        processData:false,
-                        contentType: "application/json; charset=utf-8",
-                        dataType:"json"
-                }).done(function(data, text_status, jqXHR){
-                        console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-                        login();
-                }).fail(function(err){
-
-                        console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-                        $("#prompt").html('register failed: user already exist!');
-                });
-        }
-}
-
-function registration(){
-        $('div[class="ui"]').not('#registration').each(function(){
-                $(this).hide();
-        })
-        $("#registration").show();
-
-}
+var ws = null;
 
 
-function play(){
-        $('div[class="ui"]').not('#nav,#ui_play,#lose_msg').each(function(){
-                $(this).hide();
-        })
-        $('nav button').not('#play').each(function(){
-                $(this).css({'background-color':'#0190F5', 'color':'white'});
-        })
-        $('#play').css({'background-color':'grey', 'color':'black'});
-        if (remaining != null && !stage.gameLost) {resumeGame();}
-        if(stage.gameLost) {
-                $("#lose_msg, #nav").show();
-                $("#ui_play").hide();
-                clearGame();
-        }else {
-                $("#ui_play,#nav").show();
-                $("#lose_msg").hide();
-        }       
+class Page extends React.Component{
+	constructor(props){
+		super(props);
+		this.state = {
+			state: 'Login',
+			userErrorText: '',
+			passErrorText: '',
+			loginErrorText: '',
+			updateErrorText: '',
+			lost: false
+		};
+	}
+	
+	handleLogin = (username, password) => {
+		this.setState({loginErrorText: ''});
+		credentials =  { 
+			"username": username, 
+			"password": password
+		};
+		$.ajax({
+			method: "POST",
+			url: "/api/auth/login",
+			data: JSON.stringify({}),
+			headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+			processData:false,
+			contentType: "application/json; charset=utf-8",
+			dataType:"json"
+		}).done((data, text_status, jqXHR) => {
+			console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+			credentials.token = data.token;
+			this.connect();
+		}).fail((err) =>{
+			console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+			this.setState({loginErrorText: 'Incorrect password'})
+		});
+	}
 
-}
+	connect = () => {
+		ws = new WebSocket(`ws://${window.location.hostname}:8001`);
+		ws.onopen = function (event) {
+			send("login", {"token": credentials.token});
+		};
+		ws.onclose = function (event) {
+			console.log("Disconnected");
+		};
+		ws.onmessage = (event) => {
+			this.handleMessage(event);
+		};
+	}
 
-function loggedin(){
-        if ($("#username").val() == ''){
-                $("#prom").html('Username cant be empty!');
-        }else if($("#password").val() == ''){
-                $("#prom").html('Password cant be empty!');
-        }else{
-                $("#prom").html('');
-                credentials =  { 
-                        "username": $("#username").val(), 
-                        "password": $("#password").val() 
-                };
+	handleMessage = (event) => {
+		var data = JSON.parse(event.data);
+		if(data.type == undefined || data.value == undefined) {
+			console.log("bad message");
+			console.log(data);
+			return;
+		}
+		switch(data.type){
+			case "user":
+				if(data.value == "loginSuccess"){
+					this.setState({state: 'Play', lost: false});
+					document.addEventListener('keydown', this.moveByKey);
+					this.setupView();
+				} else{
+					console.log("Unauthorized");
+				}
+				break;
+			case "game":
+				if(this.state.state == "Play") 
+					this.view.draw(data.value);
+				break;
+			case "gameLost":
+				this.setState({lost: true});
+				break;
+			case "gameParams":
+				if(this.view == null) return;
+				this.width = data.value.width;
+				this.height = data.value.height;
+				this.view.stageWidth = this.width;
+				this.view.stageHeight = this.height;
+		};
+	}
 
-                $.ajax({
-                        method: "POST",
-                        url: "/api/auth/login",
-                        data: JSON.stringify({}),
-                        headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                        processData:false,
-                        contentType: "application/json; charset=utf-8",
-                        dataType:"json"
-                }).done(function(data, text_status, jqXHR){
-                        console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-                        clearInterval(interval);
-                        setupGame();
-                        startGame();
-                        play();
-                }).fail(function(err){
-                        console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-                        $('#prom').html("username and password don't match!");
-                });
-        }
-}
+	handleRegister = (username, password, passAgain) =>{
+		if (password != passAgain){
+			this.setState({passErrorText: "Passwords do not match"});
+			$("#prompt").html('Please make sure your passwords match');
+		} else{
+			$("#prompt").html('');
+			this.setState({userErrorText: '', passErrorText: ''})
+			credentials =  { 
+				"username": username, 
+				"password": password
+			};
+	
+			$.ajax({
+				method: "POST",
+				url: "/api/register",
+				data: JSON.stringify({}),
+				headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+				processData:false,
+				contentType: "application/json; charset=utf-8",
+				dataType:"json"
+			}).done((data, text_status, jqXHR) => {
+				this.showLogin();
+				$('#registermsg').html("Registration successful.");
+				console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+			}).fail((err) => {
+				console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+				this.setState({userErrorText: "User already exists!"});
+			});
+		}
+	}
 
-// show the login screen
-function login(){
-        $('div[class="ui"]').not('#ui_login').each(function(){
-                $(this).hide();
-        });
-        $('#ui_login').show();
-}
+	handleLogout = () =>{
+		if(ws != null) ws.close();
+		this.showLogin();
+	}
 
-function profile(){
-        $('div[class="ui"]').not('#prof,#nav').each(function(){
-                $(this).hide();
-        });
-        $('nav button').not('#profile').each(function(){
-                $(this).css({'background-color':'#0190F5', 'color':'white'});
-        })
-        $('#profile').css({'background-color':'grey', 'color':'black'});
-        $('#prof,#nav').show();
-        // auto fill
-        $("#update_user").html( credentials["username"]);
-        $("#prof_password").val( $("#password").val());
-        $("#update_again").val( $("#password").val());
-}
+	deleteProfile = () =>{
+		this.setState({updateErrorText: ''});
 
-function updateProfile(e){
-        if(!$("#prof_form")[0].checkValidity()) return;
-        e.preventDefault();
-        
+		$.ajax({
+			method: "DELETE",
+			url: "/api/auth/delete",
+			processData:false,
+			headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
+			contentType: "application/json; charset=utf-8",
+			dataType:"json"
+		}).done((data, text_status, jqXHR) => {
+			console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
+			this.handleLogout();
+		}).fail(function(err){
+			console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
+		});
+	}
 
-        if ($("#prof_password").val() != $("#update_again").val()){
-                $("#update_prompt").html('Please make sure passwords match!');
-        }else{
-                $("#update_prompt").html('update successful');
-        }
-}
+	handleUpdate = (username, password, passAgain) =>{
+		if(password != passAgain){
+			this.setState({updateErrorText: "Passwords do not match"});
+			$('#profileTip').html("");
+		}
+		else {
+			this.setState({updateErrorText: ""});
+			$('#profileTip').html("Update successful.");
+		}
+	}
 
-function stats(){
-        $('div[class="ui"]').not('#statistics,#nav').each(function(){
-                $(this).hide();
-        });
-        $('nav button').not('#stats').each(function(){
-                $(this).css({'background-color':'#0190F5', 'color':'white'});
-        })
-        $('#stats').css({'background-color':'grey', 'color':'black'});
-        $('#score_stat').html("Score: " + stage.score);
-        $('#bullet_stat').html("Consumed bullets: " + stage.consumed_bullets);
-        $('#statistics,#nav').show();
+	showRegister = () =>{
+		this.setState({state: 'Register', userErrorText: '', passErrorText: ''});
+	}
+	showLogin = () =>{
+		this.setState({state: 'Login', loginErrorText: ''});
+	}
+	showPlay = () =>{
+		this.setState({state: 'Play'});
+	}
+	showInstr = () =>{
+		this.setState({state: 'Instruction'});
+	}
+	showStats = () =>{
+		this.setState({state: 'Stats'});
+	}
+	showProf = () =>{
+		this.setState({state: 'Profile', updateErrorText: ''});
+	}
+	resumePlay = () =>{
+		this.setState({state: 'Play'});
+		this.setupView();
+		if(this.width != undefined) this.view.stageWidth = this.width;
+		if(this.height != undefined) this.view.stageHeight = this.height;
+	}
+
+	moveByKey = (event) => {
+		if(this.state.state != 'Play') return;
+		var key = event.key.toLowerCase();
+		var moveMap = { 
+			'a': new Pair(-8,0),
+			's': new Pair(0,8),
+			'd': new Pair(8,0),
+			'w': new Pair(0,-8),
+			'h': new Pair(0, 0)
+		};
+		if(key in moveMap){
+			send("move", moveMap[key]);
+		} else if(key == 'e'){
+			send("interact", key);
+		} else if(key == 'r')
+			send("reload", key);
+		else if(key == 'q')
+			send("switch", key);
+	}
+
+	// LMB to fire
+	mouseFire = (event) => {
+		var data = {
+			"qx": this.view.quadrantX,
+			"qy": this.view.quadrantY,
+			"theta": this.view.theta
+		};
+		send("shoot", data);
+	}
+	// player turret follows mouse
+	mouseMove = (event) => {
+		if(event.offsetX != null && event.offsetY != null)
+			this.view.trackMouse(event.offsetX, event.offsetY);
+	}
+	setupView = () => {
+		canvas = document.getElementById("stage");
+		this.view = new View(canvas, credentials["username"]);
+	}
+
+
+	render(){
+		return(
+			<div>
+				<Logo />
+				<LoginForm state={this.state.state} handleSubmit={this.handleLogin} showRegister={this.showRegister} loginErrorText={this.state.loginErrorText} />
+				<RegistrationForm state={this.state.state} handleSubmit={this.handleRegister} showLogin={this.showLogin} userErrorText={this.state.userErrorText} passErrorText={this.state.passErrorText} />
+				<Navigation state={this.state.state} showPlay={this.resumePlay} showInstr={this.showInstr} showStats={this.showStats} showProf={this.showProf} showLogin={this.handleLogout} />
+				<PlayArea state={this.state.state} mouseMove={this.mouseMove} mouseFire={this.mouseFire} keydown={this.moveByKey} lost={this.state.lost} />
+				<Instruction state={this.state.state} />
+				<Stats state={this.state.state} score={this.view==undefined? 0:this.view.score} shot={this.view==undefined? 0:this.view.shot} />
+				<Profile state={this.state.state} username={credentials.username} updateErrorText={this.state.updateErrorText} handleSubmit={this.handleUpdate} handleDelete={this.deleteProfile} />
+				{/* <Navigation /> */}
+			</div>
+		);
+	}
 }
 
-// Using the /api/auth/test route, must send authorization header
-function test(){
-        $.ajax({
-                method: "GET",
-                url: "/api/auth/test",
-                data: {},
-		headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                dataType:"json"
-        }).done(function(data, text_status, jqXHR){
-                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-        }).fail(function(err){
-                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        });
+
+function send(action, value){
+	const msg = {"action": action, "value": value};
+	ws.send(JSON.stringify(msg));
 }
 
-function updateScore(score){
-        $.ajax({
-                method: "PUT",
-                url: "/api/auth/update",
-                data: JSON.stringify({"score": stage.score}),
-                processData:false,
-                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                contentType: "application/json; charset=utf-8",
-                dataType:"json"
-        }).done(function(data, text_status, jqXHR){
-                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-        }).fail(function(err){
-                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        });
-}
-
-function getScore(score){
-        $.ajax({
-                method: "GET",
-                url: "/api/auth/update",
-                processData:false,
-                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + score) },
-                contentType: "application/json; charset=utf-8",
-                dataType:"json"
-        }).done(function(data, text_status, jqXHR){
-                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-                
-
-        }).fail(function(err){
-                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        });
-}
-
-function deletePlayer(){
-        $.ajax({
-                method: "DELETE",
-                url: "/api/auth/delete",
-                processData:false,
-                headers: { "Authorization": "Basic " + btoa(credentials.username + ":" + credentials.password) },
-                contentType: "application/json; charset=utf-8",
-                dataType:"json"
-        }).done(function(data, text_status, jqXHR){
-                console.log(jqXHR.status+" "+text_status+JSON.stringify(data));
-        }).fail(function(err){
-                console.log("fail "+err.status+" "+JSON.stringify(err.responseJSON));
-        });
-}
-
-$(function(){
-        // Setup all events here and display the appropriate UI
-        $('#delete').on('click', function(){clearGame(); deletePlayer(); login();});
-        $('#profile').on('click', function(){pauseGame(); profile();});
-        $('#stats').on('click', function(){pauseGame();stats();});
-        $("#loginSubmit").on('click',function(){ loggedin(); });
-        $("#register").on('click', function(){ registration(); });
-        $("#login").on('click', function(){login();});
-        $("#registerSubmit").on('click', function(e){registered(e);});
-        $("#profileSubmit").on('click', function(e){updateProfile(e);});
-        $("#logout").on('click', function(){ clearGame(); login();} );
-        $("#instruction").on('click', function(){ pauseGame(); instruction();});
-        $("#play").on('click', function(){ play();});
-        // $('#stats').on('click', function(){pauseGame();retrievePlayers();});
-        login();
-});
-
+ReactDOM.render(<Page />, document.getElementById('root'));

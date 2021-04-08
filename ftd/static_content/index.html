@@ -4,187 +4,33 @@
 		<meta charset="utf-8">
 		<meta HTTP-EQUIV="EXPIRES" CONTENT="-1">
 		<script src="jquery-3.5.1.min.js"></script>
-		<script language="javascript" src="model.js" > </script>
-		<script language="javascript" src="controller.js" > </script>
+		<script src="react.production.min.js"></script>
+		<script src="react-dom.production.min.js"></script>
+		<script src="babel.min.js"></script>
+		<script src="material-ui.production.min.js"></script>
+		<!-- <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+		<script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script> -->
+		<script language="javascript" src="component.js" type="text/babel"> </script>
+		<script language="javascript" src="controller.js" type="text/babel"> </script>
+		<script language="javascript" src="view.js" > </script>
 		<style>
-			#ui_login { display:block; }
+			/* #ui_login { display:block; }
 			#ui_play { display:none; }
 			#navigation {display:flex;justify-content:space-between;}
 			#navigation ul{display:flex;justify-content:space-around;list-style-type:none;border:2px solid black;padding:0px;}
 			#navigation button{border:none;background-color: #0190F5;color:white;margin:2px;padding:15px;text-align: center;}
-			#navigation button:hover{background-color:black;color:white;}
+			#navigation button:hover{background-color:black;color:white;} */
 			footer{position: fixed;bottom: 0;width: 100%;text-align: center;}
-			body{margin-bottom:5%;}
-			button{color:#8F01F5;background-color:white;}
-			textarea{vertical-align:top;}
-			#update_user{display: inline;}
-			#prompt, #prom{color:red;}
+			/* body{margin-bottom:5%;}
+			/* button{color:#8F01F5;background-color:white;} */
+			/* textarea{vertical-align:top;} */
+			/* #update_user{display: inline;}  */
 		</style>
 		<title>Fortnite2d</title>
 	</head>
 	<body bgcolor="ffffff">
-		<main>
-			<div id='nav' class='ui'>
-			<nav id="navigation">
-				<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'>
-				<ul>
-					<button id="play">Play</button>
-					<button id="instruction">Instruction</button>
-					<button id="stats">Stats</button>
-					<button id="profile">Profile</button>
-					<button id="logout">Logout</button>
-				</ul>
-			</nav>
-			</div>
-			
-			<div id="instr" class='ui'>
-				<h2> Instruction </h2>
-				<p>Welcome to f0rt9it32d! This is a brief Keybind instruction</p>
-				<p>W: move forwards</p>
-				<p>A: move leftwards</p>
-				<p>S: move backwards</p>
-				<p>D: move rightwards</p>
-				<p>H: hold position</p>
-				<p>R: reload</p>
-				<p>LMB: Shoot</p>
-				<p>E: interact</p>
-				<p>Q: switch weapon</p>
-			</div>
-
-<div id="registration" class='ui'>
-	<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'><br/>
-	<button id="login" style="text-decoration:underline;border:none">Back to login</button>
-		<h1> Registration Form</h1>
-		<form id='form' method="post">
-			<label for="user">Username* </label>           
-			<input id="user" name="user" minlength=4 required> <br/>
-					
-			<label for="regis_password">Password*</label>
-			<input id="regis_password" name="regis_password" type="password" minlength=4 required><br/>
-					
-			<label for="again">Password Again*</label>
-			<input id="again" name="again" type="password" minlength=4 required><br/>
-			<br/><br/><hr/>
 		
-		<h2>Questionnaire</h2>
-			<h4>These questions are optional and can be found in your profile after login</h4> 
-		
-		<label  for='fullname'>Name:</label>
-		<input id='fullname' name='fullname'/>
-		
-		
-		<label for="selectlist">Gender</label><br/>
-		<select id="selectlist" name="selectlist">
-		<option>I do not wish to answer</option>
-		<option>Female</option>
-		<option>Male</option>
-		<option>Other</option>
-		</select><br/><br/>
-
-		<label for="date">Date of Birth</label>
-		<input id="date" name="date" type="date"></br> <br/>
-				
-		<fieldset>
-			<legend>Favourite Games</legend>
-			<input id="thischeck" name="checkboxlist"
-					type="checkbox" value="This">
-			<label for="thischeck">Guess Game</label>
-			<input id="orcheck" name="checkboxlist"
-					type="checkbox" value="And Or">
-			<label for="orcheck">Rock Paper Scissors</label>
-			<input id="thatcheck" name="checkboxlist"
-					type="checkbox" value="That">
-			<label for="thatcheck">Frog Puzzle</label>
-		</fieldset><br/>
-				
-		<fieldset>
-			<legend>Age group</legend>
-			<input id="thisradio" name="radiobutton"
-					type="radio" value="young" checked>
-			<label for="thisradio">0-20</label>
-			<input id="orradio" name="radiobutton"
-					type="radio" value="middle">
-			<label for="orradio">21-40</label>
-			<input id="thatradio" name="radiobutton"
-					type="radio" value="old">
-			<label for="thatradio">40 or higher</label>
-		</fieldset><br/>
-				
-		<label>Self Introduction
-		<textarea id="intro" name="intro" cols="60" rows="8" 
-		placeholder="Introduce Yourself~"> </textarea> </label><br/><br/>
-					
-							
-		<input type='submit' id='registerSubmit' name="register" value="Sign Up!"/>
-		<div id="prompt"></div>
-	</form>
-</div>
-
-				<div id="ui_login" class='ui'>
-					<img src='logo.jpg' id='logo' alt='logo' width='300' height='100'>
-					<h2>Login</h2>
-						<input type="text" id="username" placeholder="User Name" required/>
-						<input type="password" id="password" placeholder="Password" required/>
-						<input type=submit id="loginSubmit" value="Start Game!">
-						<div id='prom'></div>
-						<br/><br/>
-						<button id="register" style="border:none;text-decoration:underline">Register</button>
-				</div>
-				
-
-				<div id="ui_play" class='ui'>
-					<div id="player_coords">
-					
-					</div>
-					<div id="mouse_coords">
-						
-					</div>
-					<div id="temp">
-						
-					</div>
-					<div id="player_info">
-						Health: 100        Amunition: 24        Score: 0
-					</div>
-					<center>
-						<canvas id="stage" width="500" height="500" style="border:1px solid black;"> </canvas>
-					</center>
-
-
-				</div>
-
-				<div id="lose_msg" class='ui'>
-					<h1>You lose!</h1>
-				</div>
-
-				<div id='prof' class='ui'>
-					<h2>Account Information</h2>
-					<form id='prof_form' method="post">
-						
-						<label for="user">Username* <p id="update_user"> </p></label> </br>     
-								
-						<label for="password">Password*</label>
-						<input id="prof_password" name="password" type="password" minlength=4 required><br/>
-								
-						<label for="again">Password Again*</label>
-						<input id="update_again" name="again" type="password" minlength=4 required><br/>
-						<br/><br/><hr/>
-										
-					<input type='submit' id='profileSubmit' name="profile" value="Update!"/>
-					<div id="update_prompt"></div>
-					<input type='submit' id='delete' value='Delete account!'>
-				</form>
-			</div><br/>
-
-
-				<div id='statistics' class='ui'>
-					<h2>Statistics</h2>
-					<p id='score_stat'></p>
-					<p id='bullet_stat'></p>
-				</div>
-				
-
-			
-		</main>
+		<div id="root"> </div> 
 
 		<footer>
 			A project by Kevin and Alex
